@@ -10,9 +10,9 @@
 #include <string.h>
 
 
-//Si no se especifica -v VISOR -> EXIT FAILURE mostrando USO:...
+//Si no se especifica -v VISOR -> EXIT FAILURE mostrando USO:... //hecho
 //
-//Si no se encuentra VISOR -> ERROR por stderr
+//Si no se encuentra VISOR -> ERROR por stderr //hecho
 //
 //Se crea un proceso hijo para cada imagen
 //
@@ -25,39 +25,49 @@ int main(int argc, char **argv){
 
     int pid;
     char argComando[255]={0}; //le doy un tamaño exageradamente grande para que pueda caber cualquier cosa
-    sprintf(argComando,"%s",argv[2]);
 
+    if (argc<=2)
+    {
+        fprintf(stderr,"Uso: ./openimg -v VISOR [IMGs]\n");
+        exit(EXIT_FAILURE);
+    }
+    
     if(strcmp(argv[1],"-v")!=0){
         fprintf(stderr, "Uso: ./openimg -v VISOR [IMGs]\n");
         exit(EXIT_FAILURE);
     }
+    
+    if (argc>=2){
+        fprintf(stderr, "Error: No hay imágenes que visualizar\n");
+        exit(EXIT_FAILURE);
+    }
+    sprintf(argComando,"%s",argv[2]);
+
     if(execlp(argComando,argComando,NULL)==-1){ //funciona correcta,emte
         fprintf(stderr,"Error: '%s' no encontrado\n",argComando);
         exit(EXIT_FAILURE);
     }
+
+
+    //tendre que guardar los pid de los fork y comprobar que todos se mueren en el
+    //padre
     // for(int i=3; i<argc+1; i++){
-    //     if(execlp("inkscape","inkscape",argv[i],NULL)==-1){
-    //         fprintf(stderr,"Error: '%s' no encontrado",argv[2]);
+    //     switch (pid=fork){
+    //         case -1: //fork habrá fallado
+    //             perror("fork()");
+    //             exit(EXIT_FAILURE);
+    //             break;
+    //         case 0: //ha funcionado y soy el hijo, aquí se pone la implementación
+    //             //TODO
+
+    //         default: //soy el padre al crearse el hijo y esperare a todos los pid
+    //             if(wait(NULL)==-1){
+    //                 perror("wait()");
+    //                 exit(EXIT_FAILURE);
+    //             }
     //     }
     // }
-    //Se necesita bucle para realizar el execlp
-    //execlp("inkscape","inkscape",argv[i]);
 
-    switch (pid=fork()){
-        case -1: /* fork() falló */
-            perror("fork()");
-            exit(EXIT_FAILURE);
-            break;
-        default:                  /* Ejecución del proceso padre tras fork() con éxito */
-            if (wait(NULL) == -1) /* Espera a que termine el proceso hijo */
-            {   //waitpid(-1,&status, 0)==-1
-                perror("wait()");
-                //perror("Waitpid()");
-                exit(EXIT_FAILURE);
-            }
-        break;
-        //fprintf(stderr, "El pid %d ha terminado\n", pid, status);
 
-    }
 
 }
