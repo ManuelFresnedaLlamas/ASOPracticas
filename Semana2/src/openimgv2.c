@@ -27,7 +27,7 @@ int main(int argc, char **argv){
     int pid;
     int checkAcceso=0;
     int status=0;
-                    int a=0;
+    int a=0;
     int arrayPID[argc-2];
 
     char *argVisor=NULL;
@@ -64,8 +64,9 @@ int main(int argc, char **argv){
 
     }
     //necesito un buffer donde guardar los PID y esperar a que todos los PID terminen
+
     
-    for(int i=3;i<argc;i++){
+    for(int i=2;i<argc;i++){
        // arrayPID[i-3]=fork(); //creamos proceso hijo
         //lfmaimo@um.es
         switch (pid=fork()){
@@ -75,29 +76,40 @@ int main(int argc, char **argv){
                 break;
             case 0: //ahora soy el hijo
                 //tendremos que comprobar que existen las imagenes
-                checkAcceso=access(argv[i],F_OK); //si existe
-                if (checkAcceso==-1){
-                    fprintf(stderr,"No deberia entrar aqui\n");
-                    exit(EXIT_FAILURE);
-                }
-                fprintf(stderr,"jajajajaj\n");
-                execlp("pepe","pepe", "noexiste",NULL);
-                    fprintf(stderr,"Error: '%s' no encontrado\n",argVisor);
-                    exit(EXIT_FAILURE);
-                    break;
+
+
+                // checkAcceso=access(argv[i+3],F_OK); //si existe
+                // if (checkAcceso==-1){
+                //     fprintf(stderr,"No deberia entrar aqui\n");
+                //     exit(EXIT_FAILURE);
+                // }
+
+                execlp(argVisor,argVisor,argv[i+3],NULL);
+                fprintf(stderr,"Error: '%s' no encontrado\n",argVisor);
+                exit(EXIT_FAILURE);
+                break;
+
                 
 
             default: //lo que hace el padre
-                arrayPID[i-3]=pid;
+                arrayPID[i]=pid;
                 //for(int a=0;a<3;a++){
                     //if (waitpid(arrayPID[a],&status,0)==-1 && waitpid(arrayPID[a+1],&status,0)==-1 && waitpid(arrayPID[a+2],&status,0)==-1){ /* Espera a que termine el proceso hijo */ 
-                    // if(waitpid(arrayPID[i-3],&status,WUNTRACED)){
-                    //     fprintf(stderr,"No deberia entrar aqui aun\n");
-                    //     perror("waitpid()");
-                    //     //exit(EXIT_FAILURE);
-                    // }
+                    if(waitpid(arrayPID[i],&status,WUNTRACED)){
+                        fprintf(stderr,"No deberia entrar aqui aun\n");
+
+                        perror("waitpid()");
+                        //exit(EXIT_FAILURE);
+                    }
+
         }
         
     }
+    if(argc==3){
+        fprintf(stderr,"Error:No hay imágenes que mostrar\n");
+        exit(EXIT_FAILURE);
+    }
+
+    
 
 }
