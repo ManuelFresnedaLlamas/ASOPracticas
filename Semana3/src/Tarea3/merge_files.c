@@ -24,28 +24,20 @@ void imprimirInstrucciones(void){
         
 }
 
-void comprobarSizeBuff(char * memoria){
+void comprobarSizeBuff(char * memoria){ 
     //TODO
     /*Comprobar que la memoria dada como argumento es un número entero entre
     *1<=BUFSIZE<=128MB=134217728
     */
-                                                            //con * indico primer argumento, puedo usarlo como array
-    fprintf(stdout,"La memoria pasada como argumento es: %d\n",(*memoria-'0')); //con '-0' convertimos el char en entero, nos devuelve el primero miembro del puntero
     
-    
-    int i=0;
-    char a='0';
-    char array[]={0};
-    while(a!='\0'){
-        array[i]=memoria[i];
-        a=memoria[i];
-        i++;
-        fprintf(stdout,"Los valores del puntero son: %d",array[i-1]);
+    int aux=atoi(memoria); //guarda la memoria en entero correctamente
+
+    if(aux<1 || aux>134217718){
+        fprintf(stderr, "Error: Tamaño de buffer incorrecto.\n");
+        imprimirUso();
+        imprimirInstrucciones();
     }
     
-  //  int aux=atoi(*memoria);
-
-   // fprintf(stdout,"El entero es: %d\n",aux);
 
 }
 
