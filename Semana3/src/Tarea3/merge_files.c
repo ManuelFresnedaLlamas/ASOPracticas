@@ -13,12 +13,57 @@
 void imprimirUso(void){
     fprintf(stderr, "Uso: merge_files [-t BUFSIZE] [-o FILEOUT] FILEIN1 [FILEIN2 ...FILEINn]\n");
 }
+
 void imprimirInstrucciones(void){
     
     fprintf(stderr, "NO admite lectura de la entrada estandar.\n");
     fprintf(stderr, "-t BUFSIZE Tamaño de buffer donde 1<= BUFSIZE <=128MB\n");
     fprintf(stderr, "-o FILEOUT Usa FILEOUT en lugar de la salida estandar\n");
         
+}
+
+void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
+    //Comprobamos que no se superen 16 ficheros.
+    int contadorAux=0;
+    //si memRe!=NULL -> argc [1] y argc[2] llenos
+    //si ficheroSalida tambien != NULL -> argc[3] y argc[4]
+    if(memReservar!=NULL && ficheroSalida!=NULL){
+        for(int i=5;i<argc;i++){
+            contadorAux++;
+            if(contadorAux>16){ //si tenemos más de 16 ficheros
+                fprintf(stderr,"Se ha reservado ambos\n");
+                fprintf(stderr,"Error: Demasiados ficheros de entrada. Máximo 16 ficheros.\n");
+                imprimirInstrucciones();
+                exit(EXIT_FAILURE);
+            }
+        }
+        return;
+    }
+    //si solo uno de ambos tiene NULL -> arg [1] y [2] ocupados
+    if(memReservar!=NULL || ficheroSalida!=NULL){
+        for(int i=3;i<argc;i++){
+            contadorAux++;
+            if(contadorAux>16){ //si tenemos más de 16 ficheros
+                fprintf(stderr,"Se ha reservado mem o hay fichout\n");
+                fprintf(stderr,"Error: Demasiados ficheros de entrada. Máximo 16 ficheros.\n");
+                imprimirInstrucciones();
+                exit(EXIT_FAILURE);
+            }
+        }
+        return;
+    }
+
+    if(memReservar==NULL && ficheroSalida==NULL){
+        for(int i=1;i<argc;i++){
+            contadorAux++;
+            if(contadorAux>16){
+                fprintf(stderr,"Error: Demasiados ficheros de entrada. Máximo 16 ficheros.\n");
+                imprimirInstrucciones();
+                exit(EXIT_FAILURE);
+            }
+        }
+        return;
+    }
 }
 
 int main(int argc, char **argv)
@@ -37,7 +82,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    while ((opt = getopt(argc, argv, "tn:on")) != -1)
+    while ((opt = getopt(argc, argv, "t:o:")) != -1) //: al final indica que esperan argumento
     {
         //fprintf(stdout,"%d",*optarg);
         switch (opt)
@@ -50,48 +95,13 @@ int main(int argc, char **argv)
             break;
 
         //default:
-            //Se tendra buffer de 1024 bytes y FILEOUT será la salida estándar
-
-            
-        }
-    }
-    //Comprobamos que no se superen 16 ficheros.
-    int contadorAux=0;
-    //si memRe!=NULL -> argc [1] y argc[2] llenos
-    //si ficheroSalida tambien != NULL -> argc[3] y argc[4]
-    if(memReservar!=NULL && ficheroSalida!=NULL){
-        for(int i=5;i<argc;i++){
-            contadorAux++;
-            if(contadorAux>16){ //si tenemos más de 16 ficheros
-                fprintf(stderr,"Error: Demasiados ficheros de entrada. Máximo 16 ficheros.\n");
-                imprimirInstrucciones();
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
-    //si solo uno de ambos tiene NULL -> arg [1] y [2] ocupados
-    if(memReservar!=NULL || ficheroSalida!=NULL){
-        for(int i=3;i<argc;i++){
-            contadorAux++;
-            if(contadorAux>16){ //si tenemos más de 16 ficheros
-                fprintf(stderr,"Error: Demasiados ficheros de entrada. Máximo 16 ficheros.\n");
-                imprimirInstrucciones();
-                exit(EXIT_FAILURE);
-            }
+            //Se tendra buffer de 1024 bytes y FILEOUT será la salida estándar            
         }
     }
 
-    if(memReservar==NULL && ficheroSalida==NULL){
-        for(int i=1;i<argc;i++){
-            contadorAux++;
-            if(contadorAux>16){
-                fprintf(stderr,"Error: Demasiados ficheros de entrada. Máximo 16 ficheros.\n");
-                imprimirInstrucciones();
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
 
+
+    comprobarNumFicheros(argc,memReservar,ficheroSalida);
     //Si se da fichero salida, abrimos y guardamos su fd
     if (ficheroSalida != NULL)
     {
