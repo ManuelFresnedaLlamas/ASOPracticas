@@ -10,6 +10,8 @@
 #include <ctype.h>
 
 
+
+
 void imprimirUso(void){
     fprintf(stderr, "Uso: merge_files [-t BUFSIZE] [-o FILEOUT] FILEIN1 [FILEIN2 ...FILEINn]\n");
 }
@@ -20,6 +22,31 @@ void imprimirInstrucciones(void){
     fprintf(stderr, "-t BUFSIZE Tamaño de buffer donde 1<= BUFSIZE <=128MB\n");
     fprintf(stderr, "-o FILEOUT Usa FILEOUT en lugar de la salida estandar\n");
         
+}
+
+void comprobarSizeBuff(char * memoria){
+    //TODO
+    /*Comprobar que la memoria dada como argumento es un número entero entre
+    *1<=BUFSIZE<=128MB=134217728
+    */
+                                                            //con * indico primer argumento, puedo usarlo como array
+    fprintf(stdout,"La memoria pasada como argumento es: %d\n",(*memoria-'0')); //con '-0' convertimos el char en entero, nos devuelve el primero miembro del puntero
+    
+    
+    int i=0;
+    char a='0';
+    char array[]={0};
+    while(a!='\0'){
+        array[i]=memoria[i];
+        a=memoria[i];
+        i++;
+        fprintf(stdout,"Los valores del puntero son: %d",array[i-1]);
+    }
+    
+  //  int aux=atoi(*memoria);
+
+   // fprintf(stdout,"El entero es: %d\n",aux);
+
 }
 
 void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
@@ -99,7 +126,7 @@ int main(int argc, char **argv)
         }
     }
 
-
+    comprobarSizeBuff(memReservar);
 
     comprobarNumFicheros(argc,memReservar,ficheroSalida);
     //Si se da fichero salida, abrimos y guardamos su fd
