@@ -24,7 +24,7 @@ void imprimirInstrucciones(void){
         
 }
 
-void comprobarSizeBuff(char * memoria){ 
+int comprobarSizeBuff(char * memoria){ 
     //TODO
     /*Comprobar que la memoria dada como argumento es un número entero entre
     *1<=BUFSIZE<=128MB=134217728
@@ -36,7 +36,10 @@ void comprobarSizeBuff(char * memoria){
         fprintf(stderr, "Error: Tamaño de buffer incorrecto.\n");
         imprimirUso();
         imprimirInstrucciones();
+        exit(EXIT_FAILURE);
     }
+
+    return aux;
     
 
 }
@@ -59,7 +62,7 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
         return;
     }
     //si solo uno de ambos tiene NULL -> arg [1] y [2] ocupados
-    if(memReservar!=NULL || ficheroSalida!=NULL){
+    if((memReservar!=NULL || ficheroSalida!=NULL)&& argc>3){
         for(int i=3;i<argc;i++){
             contadorAux++;
             if(contadorAux>16){ //si tenemos más de 16 ficheros
@@ -68,7 +71,7 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
                 imprimirInstrucciones();
                 exit(EXIT_FAILURE);
             }
-        }
+        }   
         return;
     }
 
@@ -83,15 +86,108 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
         }
         return;
     }
+
+    if((memReservar==NULL || ficheroSalida==NULL) && argc<=3){
+        fprintf(stderr,"Error: No hay ficheros de entrada\n");
+        imprimirUso();
+        imprimirInstrucciones();
+        exit(EXIT_FAILURE);
+    }
 }
+
+
+void catfd(int fdin, int fdout, char *buf, unsigned buf_size)
+{
+    ssize_t num_read, num_written;
+
+    while ((num_read = read(fdin, buf, buf_size)) > 0)
+    {
+        
+        num_written = write(fdout, buf, num_read);
+        // while((por_escribir>0 &&(num_written=write(fdout,buf+escritos,por_escribir))==-1)){ //nueva
+        //     por_escribir -= num_written; //nueva
+        //     escritos +=num_written; //nueva
+        // }
+        if (num_written == -1)
+        {
+            perror("write(fdin)");
+            exit(EXIT_FAILURE);
+        }
+        /* Escrituras parciales no tratadas */
+        // assert(num_written == num_read);
+    }
+
+    if (num_read == -1)
+    {
+        perror("read(fdin)");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void reservarMemoria(char * buf, int buf_size, char * ficheroSalida, int argc, char **argv, int fdout){
+
+    /* Reserva memoria dinámica para buffer de lectura */
+    if ((buf = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
+
+    //Si se da fichero salida, abrimos y guardamos su fd
+    if (ficheroSalida != NULL)
+    {
+        fdout = open(ficheroSalida, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        if (fdout == -1)
+        {
+            perror("open(fileout)");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else /* Por defecto, la salida estándar */
+        fdout = STDOUT_FILENO;
+
+    /* Abre cada fichero de entrada y lo escribe en 'fileout' */
+    if (optind < argc)
+        for (int i = optind; i < argc; i++)
+        {
+            int fdin = open(argv[i], O_RDONLY);
+            if (fdin == -1)
+            {
+                perror("open(filein)");
+                continue;
+            }
+            catfd(fdin, fdout, buf, buf_size);
+            if (close(fdin) == -1)
+            {
+                perror("close(fdin)");
+                exit(EXIT_FAILURE);
+            }
+        }
+    else
+    {
+        catfd(STDIN_FILENO, fdout, buf, buf_size);
+    }
+
+    if (close(fdout) == -1)
+    {
+        perror("close(fdout)");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+
+
 
 int main(int argc, char **argv)
 {
+    int buf_size;
     int opt;
-    int fdout;
+    int fdout=0;
     int aux=0; //variable que usaremos para recoger el char* de -t
     char * memReservar=NULL;
     char * ficheroSalida=NULL;
+    char * buf=NULL;
     
     if (argc == 1)
     {
@@ -113,27 +209,32 @@ int main(int argc, char **argv)
             ficheroSalida=optarg;
             break;
 
-        //default:
-            //Se tendra buffer de 1024 bytes y FILEOUT será la salida estándar            
+        default: //Cuidado
+            fprintf(stderr,"Error: No hay ficheros de entrada\n");
+            imprimirUso();
+            imprimirInstrucciones();
+            break;            
         }
     }
+    if(memReservar!=NULL){
+        buf_size=comprobarSizeBuff(memReservar);
+    } else{
+        buf_size=1024;
+    }
 
-    comprobarSizeBuff(memReservar);
 
     comprobarNumFicheros(argc,memReservar,ficheroSalida);
-    //Si se da fichero salida, abrimos y guardamos su fd
-    if (ficheroSalida != NULL)
-    {
-        fdout = open(ficheroSalida, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-        if (fdout == -1)
-        {
-            perror("open(fileout)");
-            exit(EXIT_FAILURE);
-        }
-    }
-    else /* Por defecto, la salida estándar */
-        fdout = STDOUT_FILENO;
+        /*
+        *Una vez comprobado el tamaño del buffer y el número de ficheros, podemos proceder a reservar el buffer de lectura y escritura
+        */
+    reservarMemoria(buf, buf_size, ficheroSalida, argc, argv, fdout);
 
+    
+
+    /* Libera memoria dinámica de buffer de lectura */
+    free(buf);
+
+    exit(EXIT_SUCCESS);
 
 
 }
