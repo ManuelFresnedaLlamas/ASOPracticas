@@ -96,25 +96,28 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
 }
 
 
-void catfd(int fdin, int fdout, char *buf, unsigned buf_size)
+void leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size)
 {
     ssize_t num_read, num_written;
 
     while ((num_read = read(fdin, buf, buf_size)) > 0)
     {
+        if (num_read==buf_size){
         
-        num_written = write(fdout, buf, num_read);
-        // while((por_escribir>0 &&(num_written=write(fdout,buf+escritos,por_escribir))==-1)){ //nueva
-        //     por_escribir -= num_written; //nueva
-        //     escritos +=num_written; //nueva
-        // }
-        if (num_written == -1)
-        {
-            perror("write(fdin)");
-            exit(EXIT_FAILURE);
+            num_written = write(fdout, buf, num_read);
+            // while((por_escribir>0 &&(num_written=write(fdout,buf+escritos,por_escribir))==-1)){ //nueva
+            //     por_escribir -= num_written; //nueva
+            //     escritos +=num_written; //nueva
+            // }
+            break;
+            if (num_written == -1)
+            {
+                perror("write(fdin)");
+                exit(EXIT_FAILURE);
+            }
+            /* Escrituras parciales no tratadas */
+            // assert(num_written == num_read);
         }
-        /* Escrituras parciales no tratadas */
-        // assert(num_written == num_read);
     }
 
     if (num_read == -1)
@@ -124,7 +127,14 @@ void catfd(int fdin, int fdout, char *buf, unsigned buf_size)
     }
 }
 
-void reservarMemoria(char * buf, int buf_size, char * ficheroSalida, int argc, char **argv, int fdout){
+
+/*necesitare un mientras todos los ficheros no sean EOF, haz:
+*   read fichero, tantos bytes como buff_size -> este fichero no se escribira completo
+*   escribir el buffer, vaciarlo y leer el siguiente
+*   si un fichero = EOF, no hacer nada
+*
+*/
+void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, int argc, char **argv, int fdout){
 
     /* Reserva memoria dinámica para buffer de lectura */
     if ((buf = (char *)malloc(buf_size * sizeof(char))) == NULL)
@@ -156,7 +166,7 @@ void reservarMemoria(char * buf, int buf_size, char * ficheroSalida, int argc, c
                 perror("open(filein)");
                 continue;
             }
-            catfd(fdin, fdout, buf, buf_size);
+            leerEscribir(fdin, fdout, buf, buf_size);
             if (close(fdin) == -1)
             {
                 perror("close(fdin)");
@@ -165,7 +175,7 @@ void reservarMemoria(char * buf, int buf_size, char * ficheroSalida, int argc, c
         }
     else
     {
-        catfd(STDIN_FILENO, fdout, buf, buf_size);
+        leerEscribir(STDIN_FILENO, fdout, buf, buf_size);
     }
 
     if (close(fdout) == -1)
@@ -227,7 +237,7 @@ int main(int argc, char **argv)
         /*
         *Una vez comprobado el tamaño del buffer y el número de ficheros, podemos proceder a reservar el buffer de lectura y escritura
         */
-    reservarMemoria(buf, buf_size, ficheroSalida, argc, argv, fdout);
+    reservarMemoriaYEscritura(buf, buf_size, ficheroSalida, argc, argv, fdout);
 
     
 
