@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 
 
@@ -44,7 +45,7 @@ int comprobarSizeBuff(char * memoria){
 
 }
 
-void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
+int comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
     //Comprobamos que no se superen 16 ficheros.
     int contadorAux=0;
     //si memRe!=NULL -> argc [1] y argc[2] llenos
@@ -59,7 +60,7 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
                 exit(EXIT_FAILURE);
             }
         }
-        return;
+        return contadorAux;
     }
     //si solo uno de ambos tiene NULL -> arg [1] y [2] ocupados
     if((memReservar!=NULL || ficheroSalida!=NULL)&& argc>3){
@@ -72,7 +73,7 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
                 exit(EXIT_FAILURE);
             }
         }   
-        return;
+        return contadorAux;
     }
 
     if(memReservar==NULL && ficheroSalida==NULL){
@@ -84,7 +85,7 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
                 exit(EXIT_FAILURE);
             }
         }
-        return;
+        return contadorAux;
     }
 
     if((memReservar==NULL || ficheroSalida==NULL) && argc<=3){
@@ -93,38 +94,44 @@ void comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
         imprimirInstrucciones();
         exit(EXIT_FAILURE);
     }
+    return 0;
 }
 
 
 int leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size)
 {
-    ssize_t num_read, num_written, por_escribir, escritos;
+    ssize_t num_read, num_written;
+
+    char * bufaux=NULL;
+
+    if ((bufaux = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
 
     while ((num_read = read(fdin, buf, buf_size)) > 0)
     {
-        por_escribir=num_read; //4
-        escritos=0; 
-        if (num_read==buf_size){
+        bufaux=buf;
+
+        return num_written = write(fdout, buf, num_read);
         
-            //num_written = write(fdout, buf, num_read);
-            while((por_escribir>0 &&(num_written=write(fdout,buf+escritos,por_escribir))!=-1)){ //nueva
-                por_escribir -= num_written; //nueva
-                escritos +=num_written; //nueva
-            }
-            if(num_read!=0){
-                return 1;
-            }
-            if (num_written == -1)
-            {
-                perror("write(fdin)");
-                exit(EXIT_FAILURE);
-            }
-            /* Escrituras parciales no tratadas */
-            // assert(num_written == num_read);
-            return 0;
+
+        if (num_written == -1)
+        {
+            perror("write(fdin)");
+            exit(EXIT_FAILURE);
         }
-        return 0;
+
     }
+
+    if (num_read == -1)
+    {
+        perror("read(fdin)");
+        exit(EXIT_FAILURE);
+    }
+
+    
 
     if (num_read == -1)
     {
@@ -143,17 +150,6 @@ int leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size)
 */
 void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, int argc, char **argv, int fdout){
 
-
-    int flag=123;
-
-    /* Reserva memoria dinámica para buffer de lectura */
-    if ((buf = (char *)malloc(buf_size * sizeof(char))) == NULL)
-    {
-        perror("malloc()");
-        exit(EXIT_FAILURE);
-    }
-
-    //Si se da fichero salida, abrimos y guardamos su fd
     if (ficheroSalida != NULL)
     {
         fdout = open(ficheroSalida, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -166,29 +162,38 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
     else /* Por defecto, la salida estándar */
         fdout = STDOUT_FILENO;
 
-    /* Abre cada fichero de entrada y lo escribe en 'fileout' */
-    if (optind < argc)
-        while(flag!=0){
-            for (int i = optind; i < argc; i++)
-            {
-                int fdin = open(argv[i], O_RDONLY);
-                if (fdin == -1)
-                {
-                    perror("open(filein)");
-                    continue;
-                }
-                if((flag=leerEscribir(fdin, fdout, buf, buf_size))==1){ //si el fichero no se ha acabado, lo guardamos en un array?¿
-                    fprintf(stderr,"El fichero no ha acabado\n");
+    /* Reserva memoria dinámica para buffer de lectura */
+    if ((buf = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
 
-                }else{
-                    if (close(fdin) == -1)
-                    {
-                        perror("close(fdin)");
-                        exit(EXIT_FAILURE);
-                    }
-                }
+    ssize_t siguientePosicion=0;
+
+    /* Abre cada fichero de entrada y lo escribe en 'fileout' */
+    if (optind < argc){
+    //Este bucle siguiente, se debe repetir varias veces
+        for (int i = optind; i < argc; i++)
+        {
+            int fdin = open(argv[i], O_RDONLY);
+                
+            if (fdin == -1)
+            {
+                perror("open(filein)");
+                continue;
             }
+                
+            leerEscribir(fdin, fdout, buf+siguientePosicion, buf_size);
+                
+            if (close(fdin) == -1)
+            {
+                perror("close(fdin)");
+                exit(EXIT_FAILURE);
+            }
+            siguientePosicion+=buf_size; //añadimos a posición del buffer lo ya leído
         }
+    }
     else
     {
         leerEscribir(STDIN_FILENO, fdout, buf, buf_size);
@@ -207,6 +212,7 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
 
 int main(int argc, char **argv)
 {
+    int numFicheros=0;
     int buf_size;
     int opt;
     int fdout=0;
@@ -249,13 +255,126 @@ int main(int argc, char **argv)
     }
 
 
-    comprobarNumFicheros(argc,memReservar,ficheroSalida);
+    numFicheros=comprobarNumFicheros(argc,memReservar,ficheroSalida);
         /*
         *Una vez comprobado el tamaño del buffer y el número de ficheros, podemos proceder a reservar el buffer de lectura y escritura
         */
-    reservarMemoriaYEscritura(buf, buf_size, ficheroSalida, argc, argv, fdout);
-
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //reservarMemoriaYEscritura(buf, buf_size, ficheroSalida, argc, argv, fdout);
+
+
+
+    if (ficheroSalida != NULL)
+    {
+        fdout = open(ficheroSalida, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        if (fdout == -1)
+        {
+            perror("open(fileout)");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else /* Por defecto, la salida estándar */
+        fdout = STDOUT_FILENO;
+    
+    //Guardamos los fd en un array especial apra fd
+    int arrayFD[numFicheros];
+
+    for(int u=0;u<numFicheros;u++){
+        arrayFD[u]=0;
+    }
+
+    for(int i=optind;i<argc;i++){
+        int aux=i-argc+2;
+        int fdin = open(argv[i], O_RDONLY);
+        arrayFD[i-argc+2]=fdin;
+    }
+
+//Escribimos en un array las direcciones de memoria reservadas para cada buffer
+    char *cjtoBuffer[numFicheros];
+    for(int j=0;j<numFicheros;j++){
+        if ((buf = (char *)malloc(buf_size * sizeof(char))) == NULL)
+        {
+            perror("malloc()");
+            exit(EXIT_FAILURE);
+        }
+        cjtoBuffer[j]=buf;
+    }
+
+    int num_read=0;
+    int num_reader=0;
+    int num_written=0;
+
+    char * bufSalida=NULL;
+    if ((bufSalida = (char *)malloc(buf_size * sizeof(char))) == NULL)
+        {
+            perror("malloc()");
+            exit(EXIT_FAILURE);
+        }
+    //while(1){
+        for(int v=0;v<numFicheros;v++){
+            num_read=read(arrayFD[v],cjtoBuffer[v],buf_size);
+            //num_written = write(fdout, cjtoBuffer[v], buf_size);
+            //num_reader=read(arrayFD[v],cjtoBuffer[v],buf_size);
+        }
+        //Ahora, de cada buffer, escribiremos byte a byte
+        //Tenemos cjtoBuffer con cada buffer de cada fd
+        /*
+        * cjtoBUffer[0]=Buffer=ABCD
+        * cjtoBuffer[1]=Buffer=1234
+        * 
+        * 
+        * 
+        * 
+        */
+        char *bufAux=NULL;
+        bufAux=(char*) malloc(numFicheros*sizeof(char));
+
+        for(int i=0;i<buf_size;i++){
+            for(int j=0;j<numFicheros;j++){
+                (*bufAux+j)=(*cjtoBuffer[j]+i); 
+            }
+        }
+
+
+
+
+
+        // for(int w=0;w<numFicheros*buf_size;w++){
+        //     bufSalida[w]=cjtoBuffer[w%numFicheros][w];  
+        // }
+    // char* bufAuxiliar=NULL;
+    // if ((bufAuxiliar = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    // {
+    //         perror("malloc()");
+    //         exit(EXIT_FAILURE);
+    // }
+
+      //   for(int i=0;i<buf_size;i++){
+    //         for(int j=0;j<numFicheros;j++){
+    //             fprintf(stderr, "La salida es: %c \n", *cjtoBuffer[j]+i); //cjtoBuffer + i = ABCD //cjtoBuffer[i]=A, 1 , FUERA
+    //             bufAuxiliar[j]=*cjtoBuffer[j]+i;
+
+    //         }                                                             
+                
+        
+    //     }
+        
+
+
+    //}
+
+
+        
+
+
+
+
+
+
+
+
+
 
     /* Libera memoria dinámica de buffer de lectura */
     free(buf);
