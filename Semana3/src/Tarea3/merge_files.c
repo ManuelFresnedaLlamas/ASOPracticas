@@ -98,7 +98,7 @@ int comprobarNumFicheros(int argc, char * memReservar, char * ficheroSalida){
 }
 
 
-int leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size)
+int leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size, ssize_t bytes_leidos)
 {
     ssize_t num_read, num_written;
 
@@ -110,8 +110,9 @@ int leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size)
         exit(EXIT_FAILURE);
     }
 
-    while ((num_read = read(fdin, buf, buf_size)) > 0)
+    while ((num_read = read(fdin, buf+bytes_leidos, buf_size)) > 0)
     {
+<<<<<<< HEAD
         bufaux=buf;
 
         return num_written = write(fdout, buf, num_read);
@@ -121,6 +122,28 @@ int leerEscribir(int fdin, int fdout, char *buf, unsigned buf_size)
         {
             perror("write(fdin)");
             exit(EXIT_FAILURE);
+=======
+        por_escribir=num_read; //4
+        //escritos=0; 
+        if (num_read==buf_size){
+        
+            //num_written = write(fdout, buf, num_read);
+            while((por_escribir>0 &&(num_written=write(fdout,buf+bytes_leidos,por_escribir))!=-1)){ //nueva
+                por_escribir -= num_written; //nueva
+                bytes_leidos +=num_written; //nueva
+            }
+            if(num_read!=0){
+                return bytes_leidos;
+            }
+            if (num_written == -1)
+            {
+                perror("write(fdin)");
+                exit(EXIT_FAILURE);
+            }
+            /* Escrituras parciales no tratadas */
+            // assert(num_written == num_read);
+            return 0;
+>>>>>>> 71985b69333919be8e36a604fc34bb1b9c1676d9
         }
 
     }
@@ -172,6 +195,7 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
     ssize_t siguientePosicion=0;
 
     /* Abre cada fichero de entrada y lo escribe en 'fileout' */
+<<<<<<< HEAD
     if (optind < argc){
     //Este bucle siguiente, se debe repetir varias veces
         for (int i = optind; i < argc; i++)
@@ -190,13 +214,38 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
             {
                 perror("close(fdin)");
                 exit(EXIT_FAILURE);
+=======
+    if (optind < argc)
+        while(flag!=0){
+            ssize_t bytes_leidos=0;
+            for (int i = optind; i < argc; i++)
+            {
+                int fdin = open(argv[i], O_RDONLY);
+                if (fdin == -1)
+                {
+                    perror("open(filein)");
+                    continue;
+                }
+                if((bytes_leidos=leerEscribir(fdin, fdout, buf, buf_size, bytes_leidos))!=0){ //si el fichero no se ha acabado, lo guardamos en un array?¿
+                    fprintf(stderr,"El fichero no ha acabado\n");
+
+                }else{
+                    if (close(fdin) == -1)
+                    {
+                        perror("close(fdin)");
+                        exit(EXIT_FAILURE);
+                    }else{
+                        flag=0;
+                    }
+                }
+>>>>>>> 71985b69333919be8e36a604fc34bb1b9c1676d9
             }
             siguientePosicion+=buf_size; //añadimos a posición del buffer lo ya leído
         }
     }
     else
     {
-        leerEscribir(STDIN_FILENO, fdout, buf, buf_size);
+        leerEscribir(STDIN_FILENO, fdout, buf, buf_size,0);
     }
 
     if (close(fdout) == -1)
@@ -207,7 +256,89 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
 }
 
 
+int leerWrite(int fdin, int fdout, char* buf, int buf_size, int bytes_leidos){
 
+    ssize_t num_read, num_written;
+    
+    free(buf);
+    buf = (char *)malloc(buf_size * sizeof(char));
+
+    if ((num_read = read(fdin, buf, 1245)) != 0)
+    {
+        //por_escribir=num_read; //nueva -> para tratar escrituras parciales
+        //escritos=0; //nueva
+        num_written = write(fdout, buf+bytes_leidos, buf_size);
+        // while((por_escribir>0 &&(num_written=write(fdout,buf+escritos,por_escribir))==-1)){ //nueva
+        //     por_escribir -= num_written; //nueva
+        //     escritos +=num_written; //nueva
+        // }
+        if(num_written!=0){
+            return num_written;
+        }
+        
+        if (num_written == -1)
+        {
+            perror("write(fdin)");
+            exit(EXIT_FAILURE);
+        }
+        /* Escrituras parciales no tratadas */
+        // assert(num_written == num_read);
+    }
+
+    if (num_read == -1)
+    {
+        perror("read(fdin)");
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
+
+
+void reservarEscritura(char * buf, int buf_size, char * ficheroSalida, int argc, char **argv, int fdout){
+
+    /* Reserva memoria dinámica para buffer de lectura */
+    if ((buf = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
+
+    //Si se da fichero salida, abrimos y guardamos su fd
+    if (ficheroSalida != NULL)
+    {
+        fdout = open(ficheroSalida, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        if (fdout == -1)
+        {
+            perror("open(fileout)");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else /* Por defecto, la salida estándar */
+        fdout = STDOUT_FILENO;
+
+
+    ssize_t bytes_leidos=1;
+    int aux=0;
+    if(optind<argc){
+        int i=optind;
+        while(bytes_leidos!=0){
+            for(int i = optind; i < argc; i++){
+                int fdin = open(argv[i], O_RDONLY);
+                if (fdin == -1)
+                {
+                    perror("open(filein)");
+                    continue;
+                }
+                if(bytes_leidos==1){
+                    aux=leerWrite(fdin, fdout, buf, buf_size,bytes_leidos-1);
+                }else{
+                    aux=leerWrite(fdin,fdout, buf, buf_size,bytes_leidos);
+                }
+            }
+            bytes_leidos+=aux-1;
+        }
+    }
+}
 
 
 int main(int argc, char **argv)
@@ -259,10 +390,16 @@ int main(int argc, char **argv)
         /*
         *Una vez comprobado el tamaño del buffer y el número de ficheros, podemos proceder a reservar el buffer de lectura y escritura
         */
+<<<<<<< HEAD
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //reservarMemoriaYEscritura(buf, buf_size, ficheroSalida, argc, argv, fdout);
 
+=======
+    //reservarMemoriaYEscritura(buf, buf_size, ficheroSalida, argc, argv, fdout);
+
+    reservarEscritura(buf,buf_size,ficheroSalida,argc,argv,fdout);
+>>>>>>> 71985b69333919be8e36a604fc34bb1b9c1676d9
 
 
     if (ficheroSalida != NULL)
