@@ -258,20 +258,36 @@ int main(int argc, char **argv)
                         bufSalida[punterowrite]=bufAux[v];
                         punterowrite++;
                     }else{ //Aquí entramos cuando no se lee un buffer entero y entra algo de basura
-                        if(porEscribir[i]>punterowrite){ 
-                            bufAux=cjtoBuffer[i];
-                            bufSalida[punterowrite]=bufAux[v];
-                            punterowrite++;
-                        }
-                        if(porEscribir[i]==punterowrite){
-                            bufAux=cjtoBuffer[i];
-                            bufSalida[punterowrite]=bufAux[v];
-                            if(punterowrite==buf_size){
-                                write(fdout,bufSalida,buf_size);
-                                punterowrite=0;  
+                        if(porEscribir[i]<buf_size && porEscribir[i]>=0){
+                            if(porEscribir[i]==punterowrite){
+                                bufAux=cjtoBuffer[i];
+                                bufSalida[punterowrite]=bufAux[v];
+                                if(punterowrite==buf_size && porEscribir[i]<buf_size){
+                                    porEscribir[i]=-1;
+                                }
+                                punterowrite++;
+                                
                             }
-                            punterowrite++;
+                            if(porEscribir[i]>punterowrite){ 
+                                bufAux=cjtoBuffer[i];
+                                bufSalida[punterowrite]=bufAux[v];
+                                punterowrite++;
+                                if(punterowrite==porEscribir[i]){
+                                    porEscribir[i]=-1;
+                                }
+                            }
+                            if(punterowrite==porEscribir[i]){
+                                porEscribir[i]=-1;
+                            }
+                            // if (porEscribir[i]>punterowrite){
+                            //     porEscribir[i]=-1;
+                            // }
+                            
+                        }else{
+                            bufAux=cjtoBuffer[i];
+                            bufSalida[punterowrite]=bufAux[v];
                         }
+                        
                     }
                 }
                 if(punterowrite==buf_size){
