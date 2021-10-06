@@ -300,7 +300,7 @@ int main(int argc, char **argv)
                    // ficherosTerminados[i]=-1;
                 }
             }
-            if(punterowrite>0 && fin==numFicheros){
+            if(punterowrite>=0 && fin==numFicheros){
                 write(fdout,bufSalida, punterowrite);
                 break;
             }
