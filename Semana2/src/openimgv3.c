@@ -24,6 +24,7 @@ int main(int argc, char **argv)
 {
 
     int opt;
+    int flag=0;
     int pid;
     int status;
     int arrayPID[argc - 3]; //array que contendra los PID de los hijos, el -3 de los 3 primeros args
@@ -67,6 +68,7 @@ int main(int argc, char **argv)
         {
             execlp(argVisor, argVisor, argv[i + 1], NULL);
             fprintf(stderr, "Error: '%s' no encontrado\n", argVisor);
+            flag==1;
             exit(EXIT_SUCCESS);
             break; //creamos hijo y salimos de este bucle, por tenerlo mas claro
         }
@@ -93,7 +95,7 @@ int main(int argc, char **argv)
                 fprintf(stdout, "./openimg: IMG:%s, STATUS: %d,\n", argv[i], WEXITSTATUS(status));
             }
         }
-        if (argc == 3)
+        if (argc == 3 && flag==1)
         {
             fprintf(stderr, "Error: No hay imágenes que visualizar\n");
             exit(EXIT_FAILURE);

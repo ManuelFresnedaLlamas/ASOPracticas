@@ -90,7 +90,7 @@ int main(int argc, char **argv)
             {
                 /*con inkscape y nomacs siempre devuelven 0, puesto q abren una nueva en caso de fallo
                 Usando el visor shotwell se ve que funciona esto correctamente*/
-                fprintf(stdout, "./openimg: IMG:%s, STATUS: %d,\n", argv[i], WEXITSTATUS(status));
+                fprintf(stdout, "./openimg: IMG:%s, STATUS: %d\n", argv[i], WEXITSTATUS(status));
             }
         }
         if (argc == 3)

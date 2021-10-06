@@ -167,7 +167,7 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
         fdout = STDOUT_FILENO;
 
     /* Abre cada fichero de entrada y lo escribe en 'fileout' */
-    if (optind < argc)
+    if (optind < argc){
         while(flag!=0){
             ssize_t bytes_leidos=0;
             for (int i = optind; i < argc; i++)
@@ -178,20 +178,21 @@ void reservarMemoriaYEscritura(char * buf, int buf_size, char * ficheroSalida, i
                     perror("open(filein)");
                     continue;
                 }
-                if((bytes_leidos=leerEscribir(fdin, fdout, buf, buf_size, bytes_leidos))!=0){ //si el fichero no se ha acabado, lo guardamos en un array?¿
-                    fprintf(stderr,"El fichero no ha acabado\n");
+                bytes_leidos=leerEscribir(fdin, fdout, buf, buf_size, bytes_leidos); //si el fichero no se ha acabado, lo guardamos en un array?¿
+                    
 
+                
+                if (close(fdin) == -1)
+                {
+                    perror("close(fdin)");
+                    exit(EXIT_FAILURE);
                 }else{
-                    if (close(fdin) == -1)
-                    {
-                        perror("close(fdin)");
-                        exit(EXIT_FAILURE);
-                    }else{
-                        flag=0;
-                    }
+                    flag=0;
                 }
+                
             }
         }
+    }
     else
     {
         leerEscribir(STDIN_FILENO, fdout, buf, buf_size,0);
