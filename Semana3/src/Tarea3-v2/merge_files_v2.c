@@ -211,12 +211,15 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
     int num_read=0;
+    int num_escritos=0;
+    int flag=0;
     int var_save=99999999;
-    while(1){
+    while(flag<3){
         for(int i=0;i<numFicheros;i++){
-            if(read(arrayFD[i],cjtoBuffer[i],buf_size)==EOF){
-                fprintf(stderr,"Se acabo un fichero\n");
-            }
+            if((num_read=read(arrayFD[i],cjtoBuffer[i],buf_size))<buf_size){ //Cuando el nº de bytes leidos, sea menor que buf_size
+                fprintf(stderr,"Se acabo un fichero\n");                 //solo leeremos ese tamaño de bytes -> escritura parcial?¿ yo creo que no hace falta
+                flag++;
+            }                                                            //cuando el número sea 0, no EOF, final de fichero
         }
 
         /*
@@ -252,6 +255,10 @@ int main(int argc, char **argv)
                 }else{
                     strcat(bufSalidaV,bufSalida);
                     *bufSalida='\0';
+                    //if((num_escritos=write(fdout,bufSalidaV,buf_size))==-1){
+                        int aux=strlen(bufSalidaV);
+                        fprintf(stderr,"El tamño del buffer es: %d", aux);
+                    //}
                 }
                 // if(contador==buf_size){
                 //     funcionEscritura(bufSalidaV);
