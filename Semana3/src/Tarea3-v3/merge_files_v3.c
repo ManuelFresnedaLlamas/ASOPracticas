@@ -215,6 +215,7 @@ int main(int argc, char **argv)
 
     int contador=0;
     int porEscribir[numFicheros];
+    int ficherosTerminados[numFicheros];
     int i=0;
     ssize_t num_read;
     /* Reservamos buffer de salida y algunos auxiliares */
@@ -230,6 +231,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    int punterowrite=0;
     while(contador!=numFicheros){
 
         for(i=0; i<numFicheros;i++){
@@ -249,51 +251,70 @@ int main(int argc, char **argv)
             
            
             /* Puntero para los buffer de lectura */
-            int punterowrite=0;
             for(int v=0;v<buf_size;v++){
                 for(int i=0;i<numFicheros;i++){
-                    //punterowrite++;
-                    if(porEscribir[i]==buf_size){ //Si hemos leído todos los caracteres del buffer
+
+                    if(punterowrite==buf_size){
+                        write(fdout,bufSalida,buf_size);
+                        punterowrite=0;
+                    }                    //punterowrite++;
+                    if(porEscribir[i]==buf_size && ficherosTerminados[i]!=1){ //Si hemos leído todos los caracteres del buffer
                         bufAux=cjtoBuffer[i];
                         bufSalida[punterowrite]=bufAux[v];
                         punterowrite++;
                     }else{ //Aquí entramos cuando no se lee un buffer entero y entra algo de basura
-                        if(porEscribir[i]<buf_size && porEscribir[i]>=0){
-                            if(porEscribir[i]==punterowrite){
-                                bufAux=cjtoBuffer[i];
-                                bufSalida[punterowrite]=bufAux[v];
-                                if(punterowrite==buf_size && porEscribir[i]<buf_size){
-                                    porEscribir[i]=-1;
-                                }
-                                punterowrite++;
-                                
-                            }
-                            if(porEscribir[i]>punterowrite){ 
-                                bufAux=cjtoBuffer[i];
-                                bufSalida[punterowrite]=bufAux[v];
-                                punterowrite++;
-                                if(punterowrite==porEscribir[i]){
-                                    porEscribir[i]=-1;
-                                }
-                            }
-                            if(punterowrite==porEscribir[i]){
-                                porEscribir[i]=-1;
-                            }
-                            // if (porEscribir[i]>punterowrite){
-                            //     porEscribir[i]=-1;
-                            // }
+               
+                        if(porEscribir[i]<buf_size && ficherosTerminados[i]!=1){
                             
-                        }else{
-                            bufAux=cjtoBuffer[i];
-                            bufSalida[punterowrite]=bufAux[v];
-                        }
+                            if (porEscribir[i]==v){
+                                porEscribir[i]=-1;
+                                ficherosTerminados[i]=1;
+                                i--;
+                                
+                            }else{
+                                bufAux=cjtoBuffer[i];
+                                bufSalida[punterowrite]=bufAux[v];
+                                punterowrite++;
+                            }
+                        }               
+
+               
+               
+               
+               
+               
+               
+               
+                        // if(porEscribir[i]<buf_size && porEscribir[i]>=0){
+                        //     if(porEscribir[i]==punterowrite){
+                        //         bufAux=cjtoBuffer[i];
+                        //         bufSalida[punterowrite]=bufAux[v];
+                        //         if(punterowrite==buf_size && porEscribir[i]<buf_size){
+                        //             porEscribir[i]=-1;
+                        //         }
+                        //         punterowrite++;
+                                
+                        //     }
+                        //     if(porEscribir[i]>punterowrite){ 
+                        //         bufAux=cjtoBuffer[i];
+                        //         bufSalida[punterowrite]=bufAux[v];
+                        //         punterowrite++;
+                        //         if(punterowrite==porEscribir[i]){
+                        //             porEscribir[i]=-1;
+                        //         }
+                        //     }
+                        //     if(punterowrite==porEscribir[i]){
+                        //         porEscribir[i]=-1;
+                        //     }
+
+                        // }else{
+                        //     bufAux=cjtoBuffer[i];
+                        //     bufSalida[punterowrite]=bufAux[v];
+                        // }
                         
                     }
                 }
-                if(punterowrite==buf_size){
-                    write(fdout,bufSalida,buf_size);
-                    punterowrite=0;
-                }
+
 
             }
 
