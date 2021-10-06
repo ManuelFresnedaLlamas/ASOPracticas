@@ -216,6 +216,7 @@ int main(int argc, char **argv)
     int contador=0;
     int porEscribir[numFicheros];
     int ficherosTerminados[numFicheros];
+    int fin=0;
     int i=0;
     ssize_t num_read;
     /* Reservamos buffer de salida y algunos auxiliares */
@@ -233,16 +234,20 @@ int main(int argc, char **argv)
 
     int punterowrite=0;
     while(contador!=numFicheros){
-
+        contador=0;
         for(i=0; i<numFicheros;i++){
             if((num_read=read(arrayFD[i],cjtoBuffer[i],buf_size))==0){
                 contador++;
+                ficherosTerminados[i]=1;
                 if(close(arrayFD[i])==-1){
                     perror("close(fdin)");
                     exit(EXIT_FAILURE);
                 }
             }
             porEscribir[i]=num_read;
+            if(porEscribir[i]==-1){
+                porEscribir[i]=1;
+            }
         }
 
         /* Entraremos aquí cuando se hayan leidos todos los ficheros */
@@ -262,13 +267,18 @@ int main(int argc, char **argv)
                         bufAux=cjtoBuffer[i];
                         bufSalida[punterowrite]=bufAux[v];
                         punterowrite++;
+                        if(porEscribir[i]==0){
+                            contador++;
+                            ficherosTerminados[i]=1;
+                        }
                     }else{ //Aquí entramos cuando no se lee un buffer entero y entra algo de basura
                
-                        if(porEscribir[i]<buf_size && ficherosTerminados[i]!=1){
+                        if(porEscribir[i]<=buf_size && ficherosTerminados[i]!=1){
                             
                             if (porEscribir[i]==v){
                                 porEscribir[i]=-1;
                                 ficherosTerminados[i]=1;
+                                contador++;
                                 i--;
                                 
                             }else{
@@ -277,68 +287,22 @@ int main(int argc, char **argv)
                                 punterowrite++;
                             }
                         }               
-
-               
-               
-               
-               
-               
-               
-               
-                        // if(porEscribir[i]<buf_size && porEscribir[i]>=0){
-                        //     if(porEscribir[i]==punterowrite){
-                        //         bufAux=cjtoBuffer[i];
-                        //         bufSalida[punterowrite]=bufAux[v];
-                        //         if(punterowrite==buf_size && porEscribir[i]<buf_size){
-                        //             porEscribir[i]=-1;
-                        //         }
-                        //         punterowrite++;
-                                
-                        //     }
-                        //     if(porEscribir[i]>punterowrite){ 
-                        //         bufAux=cjtoBuffer[i];
-                        //         bufSalida[punterowrite]=bufAux[v];
-                        //         punterowrite++;
-                        //         if(punterowrite==porEscribir[i]){
-                        //             porEscribir[i]=-1;
-                        //         }
-                        //     }
-                        //     if(punterowrite==porEscribir[i]){
-                        //         porEscribir[i]=-1;
-                        //     }
-
-                        // }else{
-                        //     bufAux=cjtoBuffer[i];
-                        //     bufSalida[punterowrite]=bufAux[v];
-                        // }
-                        
+                      
                     }
                 }
 
 
             }
-
-            // punterowrite=0;
-            // for(int v=0;v<buf_size;v++){  
-            //     int alertaFin[numFicheros];  
-            //     for(int j=0;j<numFicheros;j++){
-            //         bufAux=cjtoBuffer[j];
-            //         bufSalidaAux[punterowrite] = bufAux[v];
-            //         punterowrite++;
-            //         if punterowrite == buzsize
-            //             write(bufsalidaaux);
-            //             punterowrige =0;
-            //     }
-                    
-            //     }
-            //}
-        //     }
-        //     if purntowrieg > 0 
-        //         wwrige(bufsalida, punterowrite)
-        // }
-            //     /*Si los bytes leidos son 0-> final de fichero*/
-            //     /*Tendremos que cerrar fd y vaciar arrayFD[i] y limpiar su buffer*/
-        
-    
+            fin=0;
+            for(int i=0;i<numFicheros;i++){
+                if(ficherosTerminados[i]==1){
+                    fin++;
+                   // ficherosTerminados[i]=-1;
+                }
+            }
+            if(punterowrite>0 && fin==numFicheros){
+                write(fdout,bufSalida, punterowrite);
+                break;
+            }
     }
 }
