@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <ctype.h>
 
 
 void imprimirUso(){
@@ -38,10 +39,28 @@ int comprobarSizeBuff(char *memoria)
     return aux;
 }
 
+int comprobarSizeCadena(char *cadena)
+{
+    /*Comprobar que la memoria dada como argumento es un número entero entre
+    *1<=BUFSIZE<=128MB=134217728
+    */
+    int aux = atoi(cadena); 
+
+    if (aux < 0 || aux > 256)
+    {
+        fprintf(stderr, "La longitud mínima de cnadena tiene que ser mayor que 0 y menor que 256.\n");
+        imprimirUso();
+        exit(EXIT_FAILURE);
+    }
+
+    return aux;
+}
+
 int main(int argc, char *argv[]){
     
     int opt;
     int buf_size;
+    int minlength;
     char * bufsize;
     char * min_length;
     
@@ -72,6 +91,16 @@ int main(int argc, char *argv[]){
     else
     {
         buf_size = 1024; //Tamaño por defecto
+    }
+
+
+    if (minlength != NULL)
+    {
+        min_length = comprobarSizeCadena(minlength);
+    }
+    else
+    {
+        min_length = 4; //Tamaño por defecto
     }
 
 }
