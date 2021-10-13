@@ -20,10 +20,29 @@ void imprimirUso(){
     fprintf(stderr,"-t BUFSIZE\tTamaño de buffer donde MINLENGTH <= BUFSIZE <= 1MB (por defecto 1024).\n");
     fprintf(stderr,"-n MINLENGTH\tLongitud mínima de la cadena. Mayor que 0 y menor que 256(por defecto 4).\n");
 }
+
+int comprobarSizeBuff(char *memoria)
+{
+    /*Comprobar que la memoria dada como argumento es un número entero entre
+    *1<=BUFSIZE<=1MB = 1024 -> por defecto 1024
+    */
+    int aux = atoi(memoria); 
+
+    if (aux < 1 || aux > 1024)
+    {
+        fprintf(stderr, "Error: Tamaño de buffer incorrecto.\n");
+        imprimirUso();
+        exit(EXIT_FAILURE);
+    }
+
+    return aux;
+}
+
 int main(int argc, char *argv[]){
     
     int opt;
-    char * buf_size;
+    int buf_size;
+    char * bufsize;
     char * min_length;
     
     while ((opt = getopt(argc, argv, "t:n:h")) != -1)
@@ -31,7 +50,7 @@ int main(int argc, char *argv[]){
         switch (opt)
         {
         case 't': 
-            buf_size = optarg;
+            bufsize = optarg;
             break;
         case 'n':
             min_length = optarg;
@@ -44,6 +63,15 @@ int main(int argc, char *argv[]){
             imprimirUso();
             break;
         }
+    }
+
+    if (bufsize != NULL)
+    {
+        buf_size = comprobarSizeBuff(bufsize);
+    }
+    else
+    {
+        buf_size = 1024; //Tamaño por defecto
     }
 
 }
