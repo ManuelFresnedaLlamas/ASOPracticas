@@ -13,6 +13,13 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
+
+
+
+
 
 
 void imprimirUso(){
@@ -22,14 +29,14 @@ void imprimirUso(){
     fprintf(stderr,"-n MINLENGTH\tLongitud mínima de la cadena. Mayor que 0 y menor que 256(por defecto 4).\n");
 }
 
-int comprobarSizeBuff(char *memoria)
+int comprobarSizeBuff(char *memoria, int min_length)
 {
     /*Comprobar que la memoria dada como argumento es un número entero entre
     *1<=BUFSIZE<=1MB = 1024 -> por defecto 1024
     */
     int aux = atoi(memoria); 
 
-    if (aux < 1 || aux > 1024)
+    if (aux<min_length || aux < 1 || aux > 1048576)
     {
         fprintf(stderr, "Error: Tamaño de buffer incorrecto.\n");
         imprimirUso();
@@ -46,7 +53,7 @@ int comprobarSizeCadena(char *cadena)
     */
     int aux = atoi(cadena); 
 
-    if (aux < 0 || aux > 256)
+    if (aux < 0 || aux > 255)
     {
         fprintf(stderr, "La longitud mínima de cnadena tiene que ser mayor que 0 y menor que 256.\n");
         imprimirUso();
@@ -58,11 +65,11 @@ int comprobarSizeCadena(char *cadena)
 
 int main(int argc, char *argv[]){
     
-    int opt;
-    int buf_size;
-    int minlength;
-    char * bufsize;
-    char * min_length;
+    int opt=0;
+    int buf_size=0;
+    char * bufsize=NULL;
+    int min_length=0;
+    char* minlength=0;
     
     while ((opt = getopt(argc, argv, "t:n:h")) != -1)
     {
@@ -72,7 +79,7 @@ int main(int argc, char *argv[]){
             bufsize = optarg;
             break;
         case 'n':
-            min_length = optarg;
+            minlength = optarg;
             break;
         case 'h':
             imprimirUso();
@@ -84,16 +91,6 @@ int main(int argc, char *argv[]){
         }
     }
 
-    if (bufsize != NULL)
-    {
-        buf_size = comprobarSizeBuff(bufsize);
-    }
-    else
-    {
-        buf_size = 1024; //Tamaño por defecto
-    }
-
-
     if (minlength != NULL)
     {
         min_length = comprobarSizeCadena(minlength);
@@ -102,5 +99,114 @@ int main(int argc, char *argv[]){
     {
         min_length = 4; //Tamaño por defecto
     }
+
+    if (bufsize != NULL)
+    {
+        buf_size = comprobarSizeBuff(bufsize,min_length);
+    }
+    else
+    {
+        buf_size = 1024; //Tamaño por defecto
+    }
+
+
+    /* Abrimos el fd para la entrada estándar */
+    //int fdin=STDIN_FILENO;
+    int fdin=open("f1",O_RDONLY);
+
+    if(fdin==-1){
+        perror("open(fdin)");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Abrimos el fd para la salida estándar */
+
+    int fdout=STDOUT_FILENO;
+
+    if(fdout==-1){
+        perror("open(fdout)");
+        exit(EXIT_FAILURE);
+    }
+
+    char *bufLectura = NULL;
+    if ((bufLectura = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
+
+    char *bufEscritura = NULL;
+    if ((bufEscritura = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
+
+    char *bufAux = NULL;
+    if ((bufAux = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+    /* 
+    *
+    * Tratamos lecturas parciales. 
+    * Por otro lado, leeremos bytes hasta que no reciba mas bytes.
+    * 
+    */
+    int flag=0;
+    int num_written=0;
+    int num_read=0;
+    int puntero=0;
+    int leidos = 0;
+    int a_Leer = buf_size;
+    
+    
+    while(flag==0){
+        
+        while ((a_Leer > 0 && (num_read = read(fdin, bufLectura + leidos, a_Leer)) == -1))
+        {
+            // if (num_read == 0)
+            // {
+            //     //FIN LECTURA
+            //     flag=1;
+            //     break;
+            // }
+            a_Leer = a_Leer - num_read;
+            leidos = leidos + num_read;
+        }
+        if (num_read == 0)
+        {
+            //FIN LECTURA
+            flag=1;
+            //break;
+        }
+
+        for (int v = 0; v < num_read; v++){
+            int a_Escribir = puntero;
+            int escritos = 0;
+            if (puntero == num_read)
+            {
+                while ((a_Escribir > 0 && (num_written = write(fdout, bufEscritura + escritos, a_Escribir)) == -1))
+                {
+                    a_Escribir = a_Escribir - num_written;
+                    escritos = escritos + num_written;
+                }
+                puntero = 0;
+            } 
+
+
+            bufAux=bufLectura;
+            bufEscritura[puntero]=bufAux[v];
+            puntero++;
+        }
+
+
+    }
+
+
 
 }
