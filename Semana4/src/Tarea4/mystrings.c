@@ -184,11 +184,20 @@ int main(int argc, char *argv[]){
             flag=1;
             //break;
         }
+        int a_Escribir = puntero;
+        int escritos = 0;
+        if(puntero==buf_size){
+            while ((a_Escribir > 0 && (num_written = write(fdout, bufEscritura + escritos, a_Escribir)) == -1))
+                {
+                    a_Escribir = a_Escribir - num_written;
+                    escritos = escritos + num_written;
+                }
+            puntero = 0;
+        }
 
         for (int v = 0; v < num_read; v++){
-            int a_Escribir = puntero;
-            int escritos = 0;
-            if (puntero == num_read)
+
+            if (puntero == buf_size)
             {
                 while ((a_Escribir > 0 && (num_written = write(fdout, bufEscritura + escritos, a_Escribir)) == -1))
                 {
@@ -198,7 +207,7 @@ int main(int argc, char *argv[]){
                 puntero = 0;
             } 
 
-
+            /* TODO Condicion isprintable()*/ 
             bufAux=bufLectura;
             bufEscritura[puntero]=bufAux[v];
             puntero++;
