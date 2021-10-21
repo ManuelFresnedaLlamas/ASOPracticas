@@ -110,4 +110,12 @@ int main(int argc, char *argv[]){
     }
 
 
+
+    /* Abrimos el fd para la entrada estándar */
+    int fdin=STDIN_FILENO;
+    //int fdin=open("f1",O_RDONLY);
+
+    for(int i=optind;i<argc;i++){
+        //TODO abrir ficheros salida y comprobar que puedan abrirse
+    }
 }
