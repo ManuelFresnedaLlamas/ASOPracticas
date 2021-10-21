@@ -175,15 +175,29 @@ int main(int argc, char *argv[]){
             leidos = leidos + num_read;
         }
 
-        if (num_read==0)
-        {
-            flag==1;
+
+        if ((num_read<=min_length && contador>min_length) && num_read!=0){
+            for(int i=0;i<num_read;i++){
+                if(isprint(bufLectura[i]) || bufLectura[i]=='\n' || bufLectura[i]=='\t'){
+                    bufEscritura[puntero]=bufLectura[i];
+                    puntero++;
+                    contador++;
+                }
+            }
+            int a_Escribir=puntero;
+            int escritos=0;
+            while ((a_Escribir > 0 && (num_written = write(fdout, bufEscritura + escritos, a_Escribir)) == -1))
+            {
+                a_Escribir = a_Escribir - num_written;
+                escritos = escritos + num_written;
+            }
+            flag=1;
             break;
+
         }
+
         
-        
-        
-        for (int i=0;i<buf_size;i++){
+        for (int i=0;i<num_read;i++){
             if(isprint(bufLectura[i]) || bufLectura[i]=='\n' || bufLectura[i]=='\t'){
                 bufEscritura[puntero]=bufLectura[i];
                 puntero++;
@@ -204,7 +218,24 @@ int main(int argc, char *argv[]){
                     }
                 }
                 puntero=0;
+                contador=0;
             }           
+        }
+
+        if(puntero>0 && num_read==0 && contador>=min_length){
+            int a_Escribir=puntero;
+            int escritos=0;
+            while ((a_Escribir > 0 && (num_written = write(fdout, bufEscritura + escritos, a_Escribir)) == -1))
+            {
+                a_Escribir = a_Escribir - num_written;
+                escritos = escritos + num_written;
+            }
+        }
+
+        if (num_read==0)
+        {
+            flag=1;
+            break;
         }
     }
 }
