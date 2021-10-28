@@ -153,13 +153,23 @@ int main(int argc, char *argv[])
     // char *cjtoBufferAux[numFicheros];
     // for (int i = 0; i < numFicheros; i++)
     // {
-        if ((bufAux = (char *)malloc(buf_size * sizeof(char))) == NULL)
-        {
-            perror("malloc()");
-            exit(EXIT_FAILURE);
-        }
+    if ((bufAux = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
         //cjtoBufferAux[i] = bufAux;
     //}
+
+    char *bufAux_ = NULL;
+    // char *cjtoBufferAux[numFicheros];
+    // for (int i = 0; i < numFicheros; i++)
+    // {
+    if ((bufAux_ = (char *)malloc(buf_size * sizeof(char))) == NULL)
+    {
+        perror("malloc()");
+        exit(EXIT_FAILURE);
+    }
 
     char *cjtoBuffer[numFicheros];
     for (int i = 0; i < numFicheros; i++)
@@ -209,16 +219,8 @@ int main(int argc, char *argv[])
 
         //Recorremos el buffer de lectura
         int punterowrite=0;
+        punteroFicheroReferenciado=0;
         for(int i=0;i<num_read;i++){
-            
-            if (punteroFicheroReferenciado==numFicheros){ //Asi aseguramos reiniciar la posicion del puntero a los ficheros
-                punteroFicheroReferenciado=0;
-                punterowrite++;
-            }
-            *cjtoBuffer[punteroFicheroReferenciado]=bufLectura[i];
-            llenadoFicheros[punteroFicheroReferenciado]++;
-            punteroFicheroReferenciado++;
-
             if(llenadoFicheros[punteroFicheroReferenciado]==buf_size){                                                                                //CUIDADO CON ESTE PARAMETRO
                 while ((a_Escribir > 0 && (num_written = write(arrayFD[punteroFicheroReferenciado], cjtoBuffer[punteroFicheroReferenciado] + escritos, a_Escribir)) == -1))
                 {
@@ -227,6 +229,18 @@ int main(int argc, char *argv[])
                 }
                 llenadoFicheros[punteroFicheroReferenciado]=0;
             }
+            
+            if (punteroFicheroReferenciado==numFicheros){ //Asi aseguramos reiniciar la posicion del puntero a los ficheros
+                punteroFicheroReferenciado=0;
+                punterowrite++;
+            }
+            bufAux_=cjtoBuffer[punteroFicheroReferenciado];
+            bufAux_[llenadoFicheros[punteroFicheroReferenciado]]=bufLectura[i];
+            cjtoBuffer[punteroFicheroReferenciado]=bufAux_;
+            // *cjtoBuffer[punteroFicheroReferenciado]=bufLectura[i];
+            llenadoFicheros[punteroFicheroReferenciado]++;
+            punteroFicheroReferenciado++;
+
 
         }
 
