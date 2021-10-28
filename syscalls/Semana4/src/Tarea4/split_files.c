@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
     }
 
     /* Abrimos el fd para la entrada estándar */
-    int fdin = STDIN_FILENO;
-    //int fdin=open("f5",O_RDONLY);
+    //int fdin = STDIN_FILENO;
+    int fdin=open("f5",O_RDONLY);
 
     int arrayFD[numFicheros];
 
@@ -150,21 +150,14 @@ int main(int argc, char *argv[])
     *  descritos anteriormente dedicados a la escritura.
     */
     char *bufAux = NULL;
-    // char *cjtoBufferAux[numFicheros];
-    // for (int i = 0; i < numFicheros; i++)
-    // {
     if ((bufAux = (char *)malloc(buf_size * sizeof(char))) == NULL)
     {
         perror("malloc()");
         exit(EXIT_FAILURE);
     }
-        //cjtoBufferAux[i] = bufAux;
-    //}
+
 
     char *bufAux_ = NULL;
-    // char *cjtoBufferAux[numFicheros];
-    // for (int i = 0; i < numFicheros; i++)
-    // {
     if ((bufAux_ = (char *)malloc(buf_size * sizeof(char))) == NULL)
     {
         perror("malloc()");
@@ -184,7 +177,7 @@ int main(int argc, char *argv[])
 
     /* Necesitare controlar el tamaño de los buffer de escritura de dicho conjunto
     *  para saber que "capacidad de llenado" tiene en un momento determinado
-    *  por tanto, creo un array de tamaño numFichero que mantendra la posición 
+    *  por tanto, creo un array de tamaño numFichero que mantendra la posición/cantidad 
     *  de llenado.
     */ 
 
@@ -217,7 +210,7 @@ int main(int argc, char *argv[])
 
         bufAux=bufLectura;
 
-        //Recorremos el buffer de lectura
+
         int punterowrite=0;
         
         for(int i=0;i<num_read;i++){
@@ -237,7 +230,6 @@ int main(int argc, char *argv[])
             bufAux_=cjtoBuffer[punteroFicheroReferenciado];
             bufAux_[llenadoFicheros[punteroFicheroReferenciado]]=bufLectura[i];
             cjtoBuffer[punteroFicheroReferenciado]=bufAux_;
-            // *cjtoBuffer[punteroFicheroReferenciado]=bufLectura[i];
             llenadoFicheros[punteroFicheroReferenciado]++;
             punteroFicheroReferenciado++;
 
@@ -255,22 +247,15 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        // if(num_read<buf_size){
-        //     int puntero_write=0;
-        //     for(int i=0;i<numFicheros;i++){
-        //         while ((a_Escribir > 0 && (num_written = write(arrayFD[i], cjtoBuffer[i] + escritos, llenadoFicheros[i])) == -1))
-        //         {
-        //             a_Escribir = a_Escribir - num_written;
-        //             escritos = escritos + num_written;
-        //         }
-        //     }
-        // }
-
-        //punteroFicheroReferenciado=0;
-
         if(num_read==0){
             finEntrada=1;
         }
 
+    }
+
+  // Con liberar estos buffers bastará, puesto que han habido distintas igualdades más arriba
+    free(bufLectura);
+    for(int i=0;i<numFicheros;i++){
+        free(cjtoBuffer[i]);
     }
 }

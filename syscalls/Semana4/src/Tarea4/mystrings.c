@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
 
     /* Abrimos el fd para la entrada estándar */
     int fdin=STDIN_FILENO;
-    //int fdin=open("f1",O_RDONLY);
+    //int fdin=open("f2",O_RDONLY);
 
     if(fdin==-1){
         perror("open(fdin)");
@@ -238,4 +238,7 @@ int main(int argc, char *argv[]){
             break;
         }
     }
+    free(bufLectura);
+    free(bufEscritura);
+    free(bufAux);
 }
