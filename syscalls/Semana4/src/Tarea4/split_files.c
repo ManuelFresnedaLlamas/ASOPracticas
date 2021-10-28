@@ -22,6 +22,7 @@ void imprimirUso()
     fprintf(stderr, "El numero maximo de ficheros de salida es de 16.\n");
     fprintf(stderr, "-t BUFSIZE Tamaño de buffer donde 1 <= BUFSIZE <= 1MB (por defecto 1024).\n");
     fprintf(stderr, "\n");
+    exit(EXIT_FAILURE);
 }
 
 int comprobarSizeBuff(char *bufsize)
@@ -119,14 +120,19 @@ int main(int argc, char *argv[])
     }
 
     /* Abrimos el fd para la entrada estándar */
-    int fdin = STDIN_FILENO;
-    //int fdin=open("f1",O_RDONLY);
+    //int fdin = STDIN_FILENO;
+    int fdin=open("f4",O_RDONLY);
 
     int arrayFD[numFicheros];
 
     for (int i = optind; i < argc; i++)
     {
         int fdout = open(argv[i], O_RDWR, O_TRUNC, O_CREAT); //se trucaran y sino se crean
+        if (fdout == -1)
+        {
+            fprintf(stderr,"Error: No se puede abrir/crear '%s': Permission denied\n",argv[i]);
+            exit(EXIT_FAILURE);
+        }
         arrayFD[i - optind] = fdout;
     }
 
@@ -143,13 +149,17 @@ int main(int argc, char *argv[])
     *  ficheros cuando estos se llenen. Entonces, creamos un conjunto buffer donde añadiremos los buffer 
     *  descritos anteriormente dedicados a la escritura.
     */
-
     char *bufAux = NULL;
-    if ((bufAux = (char *)malloc(buf_size * sizeof(char))) == NULL)
-    {
-        perror("malloc()");
-        exit(EXIT_FAILURE);
-    }
+    // char *cjtoBufferAux[numFicheros];
+    // for (int i = 0; i < numFicheros; i++)
+    // {
+        if ((bufAux = (char *)malloc(buf_size * sizeof(char))) == NULL)
+        {
+            perror("malloc()");
+            exit(EXIT_FAILURE);
+        }
+        //cjtoBufferAux[i] = bufAux;
+    //}
 
     char *cjtoBuffer[numFicheros];
     for (int i = 0; i < numFicheros; i++)
@@ -187,7 +197,7 @@ int main(int argc, char *argv[])
     //Nuestra flag
     int finEntrada=0;
 
-    while(finEntrada=0){ //CONDICION A MODIFICAR
+    while(finEntrada!=1){ //CONDICION A MODIFICAR
 
         while ((a_Leer > 0 && (num_read = read(fdin, bufLectura + leidos, a_Leer)) == -1))
         {
@@ -195,16 +205,19 @@ int main(int argc, char *argv[])
             leidos = leidos + num_read;
         } 
 
+        bufAux=bufLectura;
+
         //Recorremos el buffer de lectura
+        int punterowrite=0;
         for(int i=0;i<num_read;i++){
             
-            if (punteroFicheroReferenciado>numFicheros){ //Asi aseguramos reiniciar la posicion del puntero a los ficheros
+            if (punteroFicheroReferenciado==numFicheros){ //Asi aseguramos reiniciar la posicion del puntero a los ficheros
                 punteroFicheroReferenciado=0;
+                punterowrite++;
             }
-
-            cjtoBuffer[punteroFicheroReferenciado]=bufLectura[i];
-            punteroFicheroReferenciado++;
+            *cjtoBuffer[punteroFicheroReferenciado]=bufLectura[i];
             llenadoFicheros[punteroFicheroReferenciado]++;
+            punteroFicheroReferenciado++;
 
             if(llenadoFicheros[punteroFicheroReferenciado]==buf_size){                                                                                //CUIDADO CON ESTE PARAMETRO
                 while ((a_Escribir > 0 && (num_written = write(arrayFD[punteroFicheroReferenciado], cjtoBuffer[punteroFicheroReferenciado] + escritos, a_Escribir)) == -1))
@@ -220,7 +233,11 @@ int main(int argc, char *argv[])
         if(num_read<buf_size){
             int puntero_write=0;
             for(int i=0;i<num_read;i++){
-                //TODO
+                while ((a_Escribir > 0 && (num_written = write(arrayFD[i], cjtoBuffer[i] + escritos, llenadoFicheros[i])) == -1))
+                {
+                    a_Escribir = a_Escribir - num_written;
+                    escritos = escritos + num_written;
+                }
             }
         }
 

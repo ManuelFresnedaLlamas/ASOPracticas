@@ -108,26 +108,6 @@ int comprobarNumFicheros(int argc, char *memReservar, char *ficheroSalida)
     return 0;
 }
 
-int asignarFicheroSalida(char *ficheroSalida)
-{
-    int fdout = 0;
-    //Si se da fichero salida, abrimos y guardamos su fd
-    if (ficheroSalida != NULL)
-    {
-        fdout = open(ficheroSalida, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-        if (fdout == -1)
-        {
-            perror("open(fileout)");
-            exit(EXIT_FAILURE);
-        }
-    }
-    else
-    { /* Por defecto, la salida estándar */
-        fdout = STDOUT_FILENO;
-    }
-
-    return fdout;
-}
 
 
 int main(int argc, char **argv)
@@ -176,26 +156,23 @@ int main(int argc, char **argv)
     /* Obtenemos el número de ficheros pasados como argumento */
     int numFicheros = comprobarNumFicheros(argc, memReservar, ficheroSalida);
 
-    /* Comprobamos cual es el fichero de salida */
-
-    int fdout = asignarFicheroSalida(ficheroSalida);
-
     /* Guardamos los FD's en un array del tamaño de numFicheros */
 
-    for (int i = optind; i < argc; i++)
-    {
-        int checkAccess=access(argv[i],F_OK); //Podríamos hacerlo más adelante al usar la función open()
-        if(checkAccess==-1){
-            char * aux=argv[i];
-            fprintf(stderr,"Error:No se puede abrir %s: No such file or directory\n",aux);
-            numFicheros--;
-        }
-    }
+    // for (int i = optind; i < argc; i++)
+    // {
+    //     int checkAccess=access(argv[i],F_OK); //Podríamos hacerlo más adelante al usar la función open()
+    //     if(checkAccess==-1){
+    //         char * aux=argv[i];
+    //         fprintf(stderr,"Error:No se puede abrir %s: No such file or directory\n",aux);
+    //         numFicheros--;
+    //     }
+    // }
+    
     int arrayFD[numFicheros];
 
     for(int i=optind;i<argc;i++){
-        int fdin = open(argv[i], O_RDONLY);
-        arrayFD[i - optind] = fdin;
+        int fdout = open(argv[i], O_RDONLY);
+        arrayFD[i - optind] = fdout;
     }
 
     /* Guardo en un buffer, llamado cjtoBuffer(conjunto de buffers leidos) los buffer de lectura de cada fichero */
