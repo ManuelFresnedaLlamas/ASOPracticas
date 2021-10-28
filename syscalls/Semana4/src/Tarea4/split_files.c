@@ -120,14 +120,14 @@ int main(int argc, char *argv[])
     }
 
     /* Abrimos el fd para la entrada estándar */
-    //int fdin = STDIN_FILENO;
-    int fdin=open("f4",O_RDONLY);
+    int fdin = STDIN_FILENO;
+    //int fdin=open("f5",O_RDONLY);
 
     int arrayFD[numFicheros];
 
     for (int i = optind; i < argc; i++)
     {
-        int fdout = open(argv[i], O_RDWR, O_TRUNC, O_CREAT); //se trucaran y sino se crean
+        int fdout = open(argv[i], O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR); //se trucaran y sino se crean
         if (fdout == -1)
         {
             fprintf(stderr,"Error: No se puede abrir/crear '%s': Permission denied\n",argv[i]);
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
     }
 
 
-    /* Para opptimizar las llamadas a read/write, utilizare un buffer de lectura de bytes de llegada
+    /* Para optimizar las llamadas a read/write, utilizare un buffer de lectura de bytes de llegada
     *  y por otro lado, tantos buffer como numFicheros tengamos para escribir,escribiremos en los 
     *  ficheros cuando estos se llenen. Entonces, creamos un conjunto buffer donde añadiremos los buffer 
     *  descritos anteriormente dedicados a la escritura.
@@ -219,8 +219,12 @@ int main(int argc, char *argv[])
 
         //Recorremos el buffer de lectura
         int punterowrite=0;
-        punteroFicheroReferenciado=0;
+        
         for(int i=0;i<num_read;i++){
+            if (punteroFicheroReferenciado==numFicheros){ //Asi aseguramos reiniciar la posicion del puntero a los ficheros
+                punteroFicheroReferenciado=0;
+                punterowrite++;
+            }
             if(llenadoFicheros[punteroFicheroReferenciado]==buf_size){                                                                                //CUIDADO CON ESTE PARAMETRO
                 while ((a_Escribir > 0 && (num_written = write(arrayFD[punteroFicheroReferenciado], cjtoBuffer[punteroFicheroReferenciado] + escritos, a_Escribir)) == -1))
                 {
@@ -230,10 +234,6 @@ int main(int argc, char *argv[])
                 llenadoFicheros[punteroFicheroReferenciado]=0;
             }
             
-            if (punteroFicheroReferenciado==numFicheros){ //Asi aseguramos reiniciar la posicion del puntero a los ficheros
-                punteroFicheroReferenciado=0;
-                punterowrite++;
-            }
             bufAux_=cjtoBuffer[punteroFicheroReferenciado];
             bufAux_[llenadoFicheros[punteroFicheroReferenciado]]=bufLectura[i];
             cjtoBuffer[punteroFicheroReferenciado]=bufAux_;
@@ -244,16 +244,29 @@ int main(int argc, char *argv[])
 
         }
 
-        if(num_read<buf_size){
-            int puntero_write=0;
-            for(int i=0;i<num_read;i++){
-                while ((a_Escribir > 0 && (num_written = write(arrayFD[i], cjtoBuffer[i] + escritos, llenadoFicheros[i])) == -1))
-                {
-                    a_Escribir = a_Escribir - num_written;
-                    escritos = escritos + num_written;
+        if(num_read==0){
+            for(int i=0;i<numFicheros;i++){
+                if(llenadoFicheros[i]!=0){
+                    while ((a_Escribir > 0 && (num_written = write(arrayFD[i], cjtoBuffer[i] + escritos, llenadoFicheros[i])) == -1))
+                    {
+                        a_Escribir = a_Escribir - num_written;
+                        escritos = escritos + num_written;
+                    }
                 }
             }
         }
+        // if(num_read<buf_size){
+        //     int puntero_write=0;
+        //     for(int i=0;i<numFicheros;i++){
+        //         while ((a_Escribir > 0 && (num_written = write(arrayFD[i], cjtoBuffer[i] + escritos, llenadoFicheros[i])) == -1))
+        //         {
+        //             a_Escribir = a_Escribir - num_written;
+        //             escritos = escritos + num_written;
+        //         }
+        //     }
+        // }
+
+        //punteroFicheroReferenciado=0;
 
         if(num_read==0){
             finEntrada=1;
