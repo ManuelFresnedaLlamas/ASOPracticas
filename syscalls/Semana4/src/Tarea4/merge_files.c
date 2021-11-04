@@ -181,21 +181,34 @@ int main(int argc, char **argv)
     int fdout = asignarFicheroSalida(ficheroSalida);
 
     /* Guardamos los FD's en un array del tamaño de numFicheros */
+    //int posAux=0;
+    int posicionFicheroMalo=0;
 
     for (int i = optind; i < argc; i++)
     {
         int checkAccess=access(argv[i],F_OK); //Podríamos hacerlo más adelante al usar la función open()
+        //posAux++;
         if(checkAccess==-1){
             char * aux=argv[i];
             fprintf(stderr,"Error:No se puede abrir %s: No such file or directory\n",aux);
             numFicheros--;
+            posicionFicheroMalo=i;
         }
     }
+    int activador=0;
     int arrayFD[numFicheros];
 
     for(int i=optind;i<argc;i++){
-        int fdin = open(argv[i], O_RDONLY);
-        arrayFD[i - optind] = fdin;
+        if(activador!=0){
+            int fdin = open(argv[i], O_RDONLY);
+            arrayFD[i - optind - 1] = fdin;
+        }
+        if(posicionFicheroMalo!=i){
+            int fdin = open(argv[i], O_RDONLY);
+            arrayFD[i - optind] = fdin;
+        }else{
+            activador++;
+        }
     }
 
     /* Guardo en un buffer, llamado cjtoBuffer(conjunto de buffers leidos) los buffer de lectura de cada fichero */
@@ -262,7 +275,8 @@ int main(int argc, char **argv)
                 porEscribir[i] = 1;
             }
         }
-
+        int a_Escribir=0;
+        int escritos=0;
         /* Entraremos aquí cuando se hayan leidos todos los ficheros */
         /* Barajamos los bytes */
         /* Trataremos nuevamente las escrituras parciales */
@@ -270,8 +284,8 @@ int main(int argc, char **argv)
         {
             for (int i = 0; i < numFicheros; i++)
             {
-                int a_Escribir = punterowrite;
-                int escritos = 0;
+                a_Escribir = punterowrite;
+                escritos = 0;
                 if (punterowrite == buf_size)
                 {
                     while ((a_Escribir > 0 && (num_written = write(fdout, bufSalida + escritos, a_Escribir)) == -1))
@@ -325,7 +339,11 @@ int main(int argc, char **argv)
         }
         if (punterowrite >= 0 && fin == numFicheros)
         {
-            write(fdout, bufSalida, punterowrite);
+            while ((a_Escribir > 0 && (num_written = write(fdout, bufSalida + escritos, a_Escribir)) == -1))
+            {
+                a_Escribir = a_Escribir - num_written;
+                escritos = escritos + num_written;
+            }
             break;
         }
     }

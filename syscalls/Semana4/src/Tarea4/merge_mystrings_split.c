@@ -24,9 +24,40 @@ void imprimirUso(void){
     fprintf(stderr,"-i  Lista de ficheros de entrada separados por comas.\n");
 }
 
+int comprobarSizeBuff(char *bufsize)
+{
+
+    int buf_size = atoi(bufsize);
+
+    if (buf_size < 1 || buf_size > 1048576)
+    {
+        fprintf(stderr, "Error: Tamaño de buffer incorrecto.\n");
+        imprimirUso();
+        exit(EXIT_FAILURE);
+    }
+
+    return buf_size;
+}
+
+int comprobarSizeCadena(char *cadena)
+{
+    int aux = atoi(cadena); 
+
+    if (aux < 1 || aux > 255)
+    {
+        fprintf(stderr, "La longitud mínima de cadena tiene que ser mayor que 0 y menor que 256.\n");
+        imprimirUso();
+        exit(EXIT_FAILURE);
+    }
+
+    return aux;
+}
+
 int main(int argc, char **argv){
 
     int opt;
+    int buf_size;
+    int min_length;
     char * minlength=NULL;
     char * bufsize=NULL;
     char * ficherosEntrada=NULL;
@@ -60,24 +91,259 @@ int main(int argc, char **argv){
         imprimirUso();
         exit(EXIT_FAILURE);
     }
-    char *arrayFicherosEntrada[16]; //Como máximo, entrarán 16 ficheros, así que reservamos una array de dicho tamaño
+
+
+    if (bufsize != NULL)
+    {
+        buf_size = comprobarSizeBuff(bufsize);
+    }
+    else
+    {
+        buf_size = 1024; //Tamaño por defecto
+    }
+
+    if (minlength != NULL)
+    {
+        min_length = comprobarSizeCadena(minlength);
+    }
+    else
+    {
+        min_length = 4; //Tamaño por defecto
+    }
+
+
+    char *arrayFicherosEntradaAux[16]; //Como máximo, entrarán 16 ficheros, así que reservamos una array de dicho tamaño
     char *ptrToken=NULL; 
     char *saveptr=NULL; 
 
-    int contador=0; //Cuenta ficheros de entrada
+    int contadorFichEntrada=0; //Cuenta ficheros de entrada
  
     ptrToken = strtok_r(ficherosEntrada, ",", &saveptr); 
     while (ptrToken != NULL) 
     { 
-        arrayFicherosEntrada[contador]=ptrToken;
-        contador++;
+        arrayFicherosEntradaAux[contadorFichEntrada]=ptrToken;
+        contadorFichEntrada++;
         printf("%s\n", ptrToken); 
         ptrToken = strtok_r(NULL, ",", &saveptr); 
     } 
-    for(int i=0;i<contador;i++){
-        fprintf(stderr,"%s ",arrayFicherosEntrada[i]); //Devuelve f1 f2 f3
+    char *arrayFicherosEntrada[contadorFichEntrada];
+
+    for(int i=0;i<contadorFichEntrada;i++){
+        //fprintf(stderr,"%s ",arrayFicherosEntradaAux[i]); //Devuelve f1 f2 f3
+        arrayFicherosEntrada[i]=arrayFicherosEntradaAux[i];    
     }
 
-    fprintf(stderr,"%s",ficherosEntrada);
+
+    int contadorFichSalida=0;
+    char * ficherosSalida=NULL;
+    char *arrayFicherosSalidaAux[16]; //16 ficheros de salida como maximo
+    
+    for (int i = optind; i < argc; i++){
+        contadorFichSalida++;
+        //fprintf(stderr,"%s",argv[i]); //funciona, nos imprime los ficheros de salida
+        arrayFicherosSalidaAux[i-optind]=argv[i];
+    }
+
+    char *arrayFicherosSalida[contadorFichSalida];
+
+    for(int i=0;i<contadorFichSalida;i++){
+        arrayFicherosSalida[i]=arrayFicherosSalidaAux[i];
+    }
+
+    // char * arrayMergeFiles[3+contadorFichEntrada+1];
+    // arrayMergeFiles[0]="./merge_files";
+    // arrayMergeFiles[1]="-t";
+    // arrayMergeFiles[2]=bufsize;
+    // for(int i=0;i<contadorFichEntrada;i++){
+    //     arrayMergeFiles[3+i]=arrayFicherosEntrada[i];
+    // }
+    // arrayMergeFiles[3+contadorFichEntrada]=NULL;
+    
+    
+    // char * arrayMergeFiles[2+contadorFichEntrada+1];
+    // arrayMergeFiles[0]="-t";
+    // arrayMergeFiles[1]=bufsize;
+    // for(int i=0;i<contadorFichEntrada;i++){
+    //     arrayMergeFiles[2+i]=arrayFicherosEntrada[i];
+    // }
+    // arrayMergeFiles[2+contadorFichEntrada]=NULL;
+    
+    
+    char * arrayMergeFiles[3+contadorFichEntrada+1];
+    arrayMergeFiles[0]="./merge_files";
+    arrayMergeFiles[1]="-t";
+    arrayMergeFiles[2]=bufsize;
+    for(int i=0;i<contadorFichEntrada;i++){
+        arrayMergeFiles[3+i]=arrayFicherosEntrada[i];
+    }
+    arrayMergeFiles[3+contadorFichEntrada]=NULL;
+
+    char * arrayMyStrings[6];
+    arrayMyStrings[0]="./mystrings";
+    arrayMyStrings[1]="-t";
+    arrayMyStrings[2]=bufsize;
+    arrayMyStrings[3]=" -n";
+    arrayMyStrings[4]=minlength;
+    arrayMyStrings[5]=NULL;
+
+    char * arraySplitFiles[3+contadorFichSalida+1];
+    arraySplitFiles[0]="./split_files";
+    arraySplitFiles[1]="-t";
+    arraySplitFiles[2]=bufsize;
+    for(int i=0;i<contadorFichSalida;i++){
+        arraySplitFiles[3+i]=arrayFicherosSalida[i];
+    }
+    arraySplitFiles[3+contadorFichSalida]=NULL;
+
+
+
+
+
+    int pipefds[2]; /* Descriptores de fichero de la tubería */
+
+    if (pipe(pipefds) == -1) /* Paso 0: Creación de la tubería */
+    {
+        perror("pipe()");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+
+//CONCATENAR merge_files -> mystrings -> split_files
+    switch (fork())
+    {
+    case -1:
+        perror("fork(1)");
+        exit(EXIT_FAILURE);
+        break;
+    case 0: /* Hijo izquierdo de la tubería */
+        /* Paso 2: El extremo de lectura no se usa */
+        if (close(pipefds[0]) == -1)
+        {
+            perror("close(1)");
+            exit(EXIT_FAILURE);
+        }
+        /* Paso 3: Redirige la salida estándar al extremo de escritura de la tubería */
+        if (dup2(pipefds[1], STDOUT_FILENO) == -1)
+        {
+            perror("dup2(1)");
+            exit(EXIT_FAILURE);
+        }
+        /* Paso 4: Cierra descriptor duplicado */
+        if (close(pipefds[1]) == -1)
+        {
+            perror("close(2)");
+            exit(EXIT_FAILURE);
+        }
+        /* Paso 5: Reemplaza el binario actual por el de `youtube-dl` */
+        //execlp("./merge_files", "./merge_files", "-t", bufsize, *arrayFicherosEntrada, NULL);
+        execvp("./merge_files",arrayMergeFiles);
+        perror("execlp(izquierdo)");
+        exit(EXIT_FAILURE);
+        break;
+    default: /* El proceso padre continúa... */
+        break;
+    }
+
+    // switch (fork())
+    // {
+    // case -1:
+    //     perror("fork(2)");
+    //     exit(EXIT_FAILURE);
+    //     break;
+    // case 0: /* Hijo central de la tubería  */
+    //     /* Paso 7: El extremo de escritura se usa */
+    //     if (close(pipefds[1]) == STDOUT_FILENO)
+    //     {
+    //         perror("close(3)");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     /* Paso 8: Redirige la entrada estándar al extremo de lectura de la tubería */
+    //     if (dup2(pipefds[0], STDIN_FILENO) == -1)
+    //     {
+    //         perror("dup2(2)");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     /* Paso 9: Cierra descriptor duplicado */
+    //     // if (close(pipefds[0]) == -1)
+    //     // {
+    //     //     perror("close(4)");
+    //     //     exit(EXIT_FAILURE);
+    //     // }
+    //     /* Paso 10: Reemplaza el binario actual por el de `ffmpeg` */
+    //     //execlp("./mystrings", "./mystrings", "-t", *bufsize, "-n", *minlength, NULL);
+    //     execvp("./mystrings",arrayMyStrings);
+    //     perror("execvp(central)");
+    //     exit(EXIT_FAILURE);
+    //     break;
+    // default: /* El proceso padre continúa... */
+    //     break;
+    // }
+
+
+    // switch (fork())
+    // {
+    // case -1:
+    //     perror("fork(2)");
+    //     exit(EXIT_FAILURE);
+    //     break;
+    // case 0: /* Hijo derecho de la tubería  */
+    //     /* Paso 7: El extremo de escritura no se usa */
+    //     if (close(pipefds[1]) == -1)
+    //     {
+    //         perror("close(3)");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     /* Paso 8: Redirige la entrada estándar al extremo de lectura de la tubería */
+    //     if (dup2(pipefds[0], STDIN_FILENO) == -1)
+    //     {
+    //         perror("dup2(2)");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     /* Paso 9: Cierra descriptor duplicado */
+    //     if (close(pipefds[0]) == -1)
+    //     {
+    //         perror("close(4)");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     //execlp("./split_files", "./split_files", "-t", *bufsize, *ficherosSalida,NULL);
+    //     execvp("./split_files", arraySplitFiles);
+    //     perror("execlp(derecho)");
+    //     exit(EXIT_FAILURE);
+    //     break;
+    // default: /* El proceso padre continúa... */
+    //     break;
+    // }
+
+
+    /* El proceso padre cierra los descriptores de fichero no usados */
+    if (close(pipefds[0]) == -1)
+    {
+        perror("close(pipefds[0])");
+        exit(EXIT_FAILURE);
+    }
+    if (close(pipefds[1]) == -1)
+    {
+        perror("close(pipefds[1])");
+        exit(EXIT_FAILURE);
+    }
+    // /* El proceso padre espera a que terminen sus procesos hijo */
+    if (wait(NULL) == -1)
+    {
+        perror("wait(1)");
+        exit(EXIT_FAILURE);
+    }
+    // if (wait(NULL) == -1)
+    // {
+    //     perror("wait(2)");
+    //     exit(EXIT_FAILURE);
+    // }
+    // if(wait(NULL) == -1){
+    //     perror("wait(3)");
+    //     exit(EXIT_FAILURE);
+    // }
+
+   
 }
    
