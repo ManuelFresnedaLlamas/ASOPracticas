@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
     }
 
     /* Abrimos el fd para la entrada estándar */
-    //int fdin = STDIN_FILENO;
-    int fdin=open("f5",O_RDONLY);
+    int fdin = STDIN_FILENO;
+    //int fdin=open("f5",O_RDONLY);
 
     int arrayFD[numFicheros];
 

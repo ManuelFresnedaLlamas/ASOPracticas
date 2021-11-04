@@ -2,6 +2,9 @@
 Autor: Manuel Fresneda Llamas
 */
 
+
+//CONCATENAR merge_files -> mystrings -> split_files
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,16 +60,24 @@ int main(int argc, char **argv){
         imprimirUso();
         exit(EXIT_FAILURE);
     }
-
+    char *arrayFicherosEntrada[16]; //Como máximo, entrarán 16 ficheros, así que reservamos una array de dicho tamaño
     char *ptrToken=NULL; 
     char *saveptr=NULL; 
+
+    int contador=0; //Cuenta ficheros de entrada
  
     ptrToken = strtok_r(ficherosEntrada, ",", &saveptr); 
     while (ptrToken != NULL) 
     { 
-       printf("%s\n", ptrToken); 
-       ptrToken = strtok_r(NULL, ",", &saveptr); 
+        arrayFicherosEntrada[contador]=ptrToken;
+        contador++;
+        printf("%s\n", ptrToken); 
+        ptrToken = strtok_r(NULL, ",", &saveptr); 
     } 
-    return 0; 
+    for(int i=0;i<contador;i++){
+        fprintf(stderr,"%s ",arrayFicherosEntrada[i]); //Devuelve f1 f2 f3
+    }
 
+    fprintf(stderr,"%s",ficherosEntrada);
 }
+   
