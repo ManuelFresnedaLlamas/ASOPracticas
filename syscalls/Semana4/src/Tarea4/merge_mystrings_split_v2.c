@@ -222,7 +222,7 @@ int main(int argc, char **argv){
 
 
 //CONCATENAR merge_files -> mystrings -> split_files
-    if
+    switch (fork())
     {
     case -1:
         perror("fork(1)");
@@ -342,22 +342,22 @@ int main(int argc, char **argv){
             default: /* El proceso padre continúa... */
                 if (close(pipefdsI_C[0]) == -1)
                 {
-                    perror("close(pipefds[0])");
+                    perror("close(pipefds[120])");
                     exit(EXIT_FAILURE);
                 }
                 if (close(pipefdsC_D[0]) == -1)
                 {
-                    perror("close(pipefds[0])");
+                    perror("close(pipefds[110])");
                     exit(EXIT_FAILURE);
                 }
             }
         }
     }
-    if (close(pipefdsC_D[0]) == -1)
-    {
-        perror("close(pipefds[0])");
-        exit(EXIT_FAILURE);
-    }
+    // if (close(pipefdsC_D[0]) == -1)
+    // {
+    //     perror("close(pipefds[10])");
+    //     exit(EXIT_FAILURE);
+    // }
 
 }
    

@@ -31,7 +31,7 @@ char* comprobarSizeBuff(char *bufsize)
 
     if (buf_size < 1 || buf_size > 1048576)
     {
-        fprintf(stderr, "Error: Tamaño de buffer incorrecto.\n");
+        fprintf(stderr, "Error: El tamaño de buffer debe ser mayor que 0 y menor que 1048576.\n");
         imprimirUso();
         exit(EXIT_FAILURE);
     }
@@ -45,7 +45,7 @@ char* comprobarSizeCadena(char *cadena)
 
     if (aux < 1 || aux > 255)
     {
-        fprintf(stderr, "La longitud mínima de cadena tiene que ser mayor que 0 y menor que 256.\n");
+        fprintf(stderr, "Error: La longitud mínima de cadena tiene que ser mayor que 0 y menor que 256.\n");
         imprimirUso();
         exit(EXIT_FAILURE);
     }
@@ -80,13 +80,16 @@ int main(int argc, char **argv){
             ficherosEntrada = optarg;
             break;
         default: 
-            fprintf(stderr,"Error: Deben proporcionarse ficheros de entrada con la opción -i\n");
+            //fprintf(stderr,"Error: Deben proporcionarse ficheros de entrada con la opción -i\n");
+            //fprintf(stderr, "Error: La longitud mínima de cadena tiene que ser mayor que 0 y menor que 256.\n");
+            fprintf(stderr,"Debe proporcionarse la lista de ficheros de salida\n");
             imprimirUso();
+            exit(EXIT_FAILURE);
             break;
         }
     }
 
-    if (ficherosEntrada==NULL){
+    if (argc<=3){
         fprintf(stderr,"Error: Deben proporcionarse ficheros de entrada con la opción -i\n");
         imprimirUso();
         exit(EXIT_FAILURE);
@@ -123,7 +126,7 @@ int main(int argc, char **argv){
     { 
         arrayFicherosEntradaAux[contadorFichEntrada]=ptrToken;
         contadorFichEntrada++;
-        printf("%s\n", ptrToken); 
+        //printf("%s\n", ptrToken); 
         ptrToken = strtok_r(NULL, ",", &saveptr); 
     } 
     char *arrayFicherosEntrada[contadorFichEntrada];
@@ -148,6 +151,12 @@ int main(int argc, char **argv){
 
     for(int i=0;i<contadorFichSalida;i++){
         arrayFicherosSalida[i]=arrayFicherosSalidaAux[i];
+    }
+
+    if(contadorFichSalida==0){
+        fprintf(stderr,"Debe porporcionarse la lista de ficheros de salida\n");
+        imprimirUso();
+        exit(EXIT_FAILURE);
     }
 
     // char * arrayMergeFiles[3+contadorFichEntrada+1];
@@ -318,11 +327,11 @@ int main(int argc, char **argv){
                 break;
             case 0: /* Hijo derecho de la tubería  */
                 /* Paso 7: El extremo de escritura no se usa */
-                // if (close(pipefdsC_D[1]) == -1)
-                // {
-                //     perror("close(3)");
-                //     exit(EXIT_FAILURE);
-                // }
+                if (close(pipefdsC_D[1]) == -1)
+                {
+                    perror("close(3)");
+                    exit(EXIT_FAILURE);
+                }
                 /* Paso 8: Redirige la entrada estándar al extremo de lectura de la tubería */
                 if (dup2(pipefdsC_D[0], STDIN_FILENO) == -1)
                 {
@@ -362,24 +371,24 @@ int main(int argc, char **argv){
     /* El proceso padre cierra los descriptores de fichero no usados */
     // if (close(pipefdsI_C[0]) == -1)
     // {
-    //     perror("close(pipefds[0])");
+    //     perror("close(pipefds[10])");
     //     exit(EXIT_FAILURE);
     // }
-    // // if (close(pipefdsI_C[1]) == -1)
-    // // {
-    // //     perror("close(pipefds[1])");
-    // //     exit(EXIT_FAILURE);
-    // // }
+    // if (close(pipefdsI_C[1]) == -1)
+    // {
+    //     perror("close(pipefds[11])");
+    //     exit(EXIT_FAILURE);
+    // }
     // if (close(pipefdsC_D[0]) == -1)
     // {
-    //     perror("close(pipefds[0])");
+    //     perror("close(pipefds[012])");
     //     exit(EXIT_FAILURE);
     // }
-    // if (close(pipefdsC_D[1]) == -1)
-    // {
-    //     perror("close(pipefds[1])");
-    //     exit(EXIT_FAILURE);
-    // }
+    if (close(pipefdsC_D[1]) == -1)
+    {
+        perror("close(pipefds[13])");
+        exit(EXIT_FAILURE);
+    }
     // /* El proceso padre espera a que terminen sus procesos hijo */
     if (wait(NULL) == -1)
     {
