@@ -152,29 +152,31 @@ int main(int argc, char **argv)
         {
         case 't': 
             memReservar = optarg;
+            if (memReservar != NULL)
+            {
+                buf_size = comprobarSizeBuff(memReservar);
+            }
+            else
+            {
+                buf_size = 1024; //Tamaño por defecto
+            }
             break;
         case 'o':
             ficheroSalida = optarg;
             break;
 
         default: 
-            fprintf(stderr, "Error: No hay ficheros de entrada\n");
-            imprimirUso();
-            imprimirInstrucciones();
+            // fprintf(stderr, "Error: No hay ficheros de entrada\n");
+            // imprimirUso();
+            // imprimirInstrucciones();
             break;
         }
     }
-    if (memReservar != NULL)
-    {
-        buf_size = comprobarSizeBuff(memReservar);
-    }
-    else
-    {
-        buf_size = 1024; //Tamaño por defecto
-    }
+    int numFicheros = comprobarNumFicheros(argc, memReservar, ficheroSalida);
+
+
 
     /* Obtenemos el número de ficheros pasados como argumento */
-    int numFicheros = comprobarNumFicheros(argc, memReservar, ficheroSalida);
 
     /* Comprobamos cual es el fichero de salida */
 

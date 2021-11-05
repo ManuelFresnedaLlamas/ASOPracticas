@@ -212,17 +212,17 @@ int main(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    // if (pipe(pipefdsC_D) == -1) /* Paso 0: Creación de la tubería */
-    // {
-    //     perror("pipe()");
-    //     exit(EXIT_FAILURE);
-    // }
+    if (pipe(pipefdsC_D) == -1) /* Paso 0: Creación de la tubería */
+    {
+        perror("pipe()");
+        exit(EXIT_FAILURE);
+    }
 
 
 
 
 //CONCATENAR merge_files -> mystrings -> split_files
-    switch (fork())
+    if
     {
     case -1:
         perror("fork(1)");
@@ -265,7 +265,6 @@ int main(int argc, char **argv){
             perror("pipe()");
             exit(EXIT_FAILURE);
         }
-
 
         switch (fork())
         {
@@ -354,48 +353,11 @@ int main(int argc, char **argv){
             }
         }
     }
-
-
-
-
-
-    /* El proceso padre cierra los descriptores de fichero no usados */
-    // if (close(pipefdsI_C[0]) == -1)
-    // {
-    //     perror("close(pipefds[0])");
-    //     exit(EXIT_FAILURE);
-    // }
-    // // if (close(pipefdsI_C[1]) == -1)
-    // // {
-    // //     perror("close(pipefds[1])");
-    // //     exit(EXIT_FAILURE);
-    // // }
-    // if (close(pipefdsC_D[0]) == -1)
-    // {
-    //     perror("close(pipefds[0])");
-    //     exit(EXIT_FAILURE);
-    // }
-    // if (close(pipefdsC_D[1]) == -1)
-    // {
-    //     perror("close(pipefds[1])");
-    //     exit(EXIT_FAILURE);
-    // }
-    // /* El proceso padre espera a que terminen sus procesos hijo */
-    if (wait(NULL) == -1)
+    if (close(pipefdsC_D[0]) == -1)
     {
-        perror("wait(1)");
-        exit(EXIT_FAILURE);
-    }
-    if (wait(NULL) == -1)
-    {
-        perror("wait(2)");
-        exit(EXIT_FAILURE);
-    }
-    if(wait(NULL) == -1){
-        perror("wait(3)");
+        perror("close(pipefds[0])");
         exit(EXIT_FAILURE);
     }
 
-   
 }
    
